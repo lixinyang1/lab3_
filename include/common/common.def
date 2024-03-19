@@ -1,0 +1,29 @@
+#ifdef OpcodeDefine
+OpcodeDefine(OP_Mul, "mul")
+OpcodeDefine(OP_Div, "div")
+OpcodeDefine(OP_Mod, "mod")
+OpcodeDefine(OP_Add, "add")
+OpcodeDefine(OP_Sub, "sub")
+OpcodeDefine(OP_Lt, "lt")
+OpcodeDefine(OP_Gt, "gt")
+OpcodeDefine(OP_Le, "le")
+OpcodeDefine(OP_Ge, "ge")
+OpcodeDefine(OP_Eq, "eq")
+OpcodeDefine(OP_Ne, "ne")
+OpcodeDefine(OP_Land, "land")
+OpcodeDefine(OP_Lor, "lor")
+OpcodeDefine(OP_Lnot, "lnot")
+OpcodeDefine(OP_Neg, "neg")
+#undef OpcodeDefine
+#endif
+
+#ifdef NodeTypeDefine
+NodeTypeDefine(ND_UnaryExpr)
+NodeTypeDefine(ND_BinaryExpr)
+NodeTypeDefine(ND_IntegerLiteral)
+#undef NodeTypeDefine
+#endif
+
+
+
+
