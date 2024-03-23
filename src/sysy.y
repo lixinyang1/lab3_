@@ -19,7 +19,6 @@ extern NodePtr root;
 %start CompUnit
 
 %type <expr> Exp Term
-%type <op> BinOp
 
 %left ADD SUB
 %left MUL DIV
@@ -31,14 +30,11 @@ CompUnit : Exp {root = $1; }
 Exp : Term { $$ = $1;}
     | SUB Exp %prec UMINUS { $$ = new TreeUnaryExpr(OP_Neg, $2); }
     | ADD Exp %prec UPLUS  { $$ = $2; }
-    | Exp BinOp Exp { $$ = new TreeBinaryExpr($2, $1, $3); }
+    | Exp ADD Exp { $$ = new TreeBinaryExpr(OpType::OP_Add, $1, $3); }
+    | Exp SUB Exp { $$ = new TreeBinaryExpr(OpType::OP_Sub, $1, $3); }
+    | Exp MUL Exp { $$ = new TreeBinaryExpr(OpType::OP_Mul, $1, $3); }
+    | Exp DIV Exp { $$ = new TreeBinaryExpr(OpType::OP_Div, $1, $3); }
     ;
-
-BinOp : ADD { $$ = OpType::OP_Add; }
-      | SUB { $$ = OpType::OP_Sub; }
-      | MUL { $$ = OpType::OP_Mul; }
-      | DIV { $$ = OpType::OP_Div; }
-      ;
 
 Term : INT { $$ = new TreeIntegerLiteral($1); }
      ;
