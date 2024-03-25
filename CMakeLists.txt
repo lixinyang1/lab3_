@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.13)
-project(compiler)
+# project info
+project(compiler
+        VERSION 2024
+        DESCRIPTION "ZheJiang University 2023~2024 Spring-Summer Compiler Project"
+        LANGUAGES C CXX)
+
+# CTest
+enable_testing()
 
 # settings
 # set to OFF to enable C mode
@@ -51,3 +58,12 @@ set(SOURCES ${C_SOURCES} ${CXX_SOURCES} ${CC_SOURCES}
 add_executable(compiler ${SOURCES})
 set_target_properties(compiler PROPERTIES C_STANDARD 11 CXX_STANDARD 17)
 target_link_libraries(compiler PRIVATE fmt::fmt-header-only)
+
+# some possible build options you may use.
+# you can specify whatever you prefer.
+
+# disable rtti and exception.
+# target_compile_options(compiler PRIVATE -fno-rtti -fno-exceptions)
+
+# enable address sanitizer if you encounter segmentation fault.
+# target_compile_options(compiler PRIVATE -O0 -g -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls)
