@@ -1,14 +1,15 @@
 #pragma once
 #include <cstdint>
 #include <type_traits>
+#include <string>
 
-#define OpcodeDefine(x, s) x,
 enum OpType {
+#define OpcodeDefine(x, s) x,
 #include "common/common.def"
 };
 
-#define NodeTypeDefine(x) x,
 enum NodeType {
+#define TreeNodeDefine(x) x,
 #include "common/common.def"
 };
 
@@ -32,13 +33,11 @@ struct Node {
     template <typename T> T as_unchecked() { return static_cast<T>(this); }
 };
 
-#define THIS(x) constexpr inline static NodeType this_type = x
-
 struct TreeExpr : public Node {
     TreeExpr(NodeType type) : Node(type) {}
 };
 struct TreeBinaryExpr : public TreeExpr {
-    THIS(ND_BinaryExpr);
+    constexpr static NodeType this_type = ND_BinaryExpr;
     OpType op;
     ExprPtr lhs, rhs;
     TreeBinaryExpr(OpType op, ExprPtr lhs, ExprPtr rhs)
@@ -47,7 +46,7 @@ struct TreeBinaryExpr : public TreeExpr {
 };
 
 struct TreeUnaryExpr : public TreeExpr {
-    THIS(ND_UnaryExpr);
+    constexpr static NodeType this_type = ND_UnaryExpr;
     OpType op;
     ExprPtr operand;
     TreeUnaryExpr(OpType op, ExprPtr operand)
@@ -56,9 +55,11 @@ struct TreeUnaryExpr : public TreeExpr {
 };
 
 struct TreeIntegerLiteral : public TreeExpr {
-    THIS(ND_IntegerLiteral);
+    constexpr static NodeType this_type = ND_IntegerLiteral;
     int64_t value;
     TreeIntegerLiteral(int64_t value) : TreeExpr(this_type), value(value) {}
 };
 
-#undef THIS
+
+/// A possible helper function dipatch based on the type of `TreeExpr`
+void print_expr(ExprPtr exp, std::string prefix = "", std::string ident = "");
