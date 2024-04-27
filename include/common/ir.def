@@ -25,8 +25,8 @@
 #ifndef MemoryInstDefine
 #define MemoryInstDefine(num, opcode, subclass)
 #endif
-#ifndef LastMemroyInst
-#define LastMemroyInst(num)
+#ifndef LastMemoryInst
+#define LastMemoryInst(num)
 #endif
 
 #ifndef FirstOtherInst
@@ -86,7 +86,7 @@ MemoryInstDefine( 15, Alloca, AllocaInst)
 MemoryInstDefine( 16, Load, LoadInst)
 MemoryInstDefine( 17, Store, StoreInst)
 MemoryInstDefine( 18, Offset, OffsetInst)
-  LastMemroyInst( 18)
+  LastMemoryInst( 18)
 
 // Terminator
   FirstTerminator(19)
@@ -113,7 +113,7 @@ OtherInstDefine( 23, Call, CallInst)
 
 #undef FirstMemoryInst
 #undef MemoryInstDefine
-#undef LastMemroyInst
+#undef LastMemoryInst
 
 #undef FirstOtherInst
 #undef OtherInstDefine
