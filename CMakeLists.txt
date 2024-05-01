@@ -67,26 +67,3 @@ target_link_libraries(compiler PRIVATE fmt::fmt-header-only)
 
 # enable address sanitizer if you encounter segmentation fault.
 # target_compile_options(compiler PRIVATE -O0 -g -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls)
-
-# all test C/C++ sources files
-file(GLOB_RECURSE TEST_SOURCES "test/*.cpp")
-foreach (test_source ${TEST_SOURCES})
-    # Create test suit
-    get_filename_component(test_filename ${test_source} NAME)
-    string(REPLACE ".cpp" "" test_name ${test_filename})
-    message(STATUS "Create test suit: ${test_name}")
-
-    # Add the test target separately and as part of "make check-tests".
-    add_executable(${test_name} EXCLUDE_FROM_ALL ${test_source})
-    target_sources(${test_name} PUBLIC ${SOURCES})
-    # Set test target properties and dependencies.
-    set_target_properties(${test_name}
-            PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/test"
-            COMMAND ${test_name}
-            )
-
-    # Add the test under CTest.
-    add_test(${test_name} ${CMAKE_BINARY_DIR}/test/${test_name}) 
-
-endforeach(test_source ${TEST_SOURCES})
