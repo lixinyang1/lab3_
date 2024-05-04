@@ -7,6 +7,12 @@ set(ACCSYS_MAIN_INCLUDE_DIR ${ACCSYS_MAIN_SRC_DIR}/include)
 set(ACCSYS_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 include_directories(${ACCSYS_MAIN_INCLUDE_DIR})
+
+# debug options
+if (ACCSYS_DEBUG)
+    add_compile_options(-O0 -g -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls)
+endif ()
+
 add_subdirectory(lib)
 
 # accsys tests

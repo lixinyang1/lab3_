@@ -3,18 +3,18 @@
 #include "gtest/gtest.h"
 
 
-TEST(IRTest, PrimitiveTypeTest) {
+TEST(TypeTest, PrimitiveTypeTest) {
     // Test the primitive type
     Type *IntegerType = Type::getIntegerTy();
     Type *UnitTy = Type::getUnitTy();
 
     ASSERT_EQ(IntegerType->getTypeID(), Type::IntegerTyID);
-    ASSERT_EQ(IntegerType->isIntegerTy(), true);
+    ASSERT_TRUE(IntegerType->isIntegerTy());
     ASSERT_EQ(UnitTy->getTypeID(), Type::UnitTyID);
-    ASSERT_EQ(UnitTy->isUnitTy(), true);
+    ASSERT_TRUE(UnitTy->isUnitTy());
 }
 
-TEST(IRTest, PointerTypeTest) {
+TEST(TypeTest, PointerTypeTest) {
     // Test the pointer type
     Type *IntegerType = Type::getIntegerTy();
     // cast to Type * type.
@@ -23,14 +23,14 @@ TEST(IRTest, PointerTypeTest) {
 
     // up-casting
     Type *OpaqueType = PtrIntType;
-    ASSERT_EQ(OpaqueType->isPointerTy(), true);
+    ASSERT_TRUE(OpaqueType->isPointerTy());
     ASSERT_EQ(OpaqueType->getTypeID(), Type::PointerTyID);
-    ASSERT_EQ(isa<PointerType>(OpaqueType), true);
+    ASSERT_TRUE(isa<PointerType>(OpaqueType));
     ASSERT_EQ(dyn_cast<PointerType>(OpaqueType)->getElementType(), IntegerType);
 }
 
 
-TEST(IRTest, FunctionTypeTest) {
+TEST(TypeTest, FunctionTypeTest) {
     // Test the function type
     Type *IntegerType = Type::getIntegerTy();
     Type *UnitTy = Type::getUnitTy();
@@ -41,5 +41,5 @@ TEST(IRTest, FunctionTypeTest) {
     ASSERT_EQ(FuncType->getParamType(0), IntegerType);
     ASSERT_EQ(FuncType->getParamType(1), UnitTy);
     ASSERT_EQ(FuncType->getReturnType(), UnitTy);
-    ASSERT_EQ(isa<FunctionType>(FuncType), true);
+    ASSERT_TRUE(isa<FunctionType>(FuncType));
 }

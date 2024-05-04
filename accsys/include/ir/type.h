@@ -22,7 +22,7 @@ public:
     ~Buffer() {
         for (auto &[Key, Val]: buffer) {
             Val->~V();
-            free(Val);
+            std::allocator<V>().deallocate(Val, 1);
         }
     }
 protected:
@@ -32,9 +32,9 @@ public:
     using iterator = typename BufferType::iterator;
     std::pair<iterator, bool> insert_as(const KeyTy &Key) {
         V *DT = nullptr;
-        auto Insertion = buffer.insert({Key, nullptr});
+        auto Insertion = buffer.insert(std::make_pair(Key, nullptr));
         if (Insertion.second) {
-            DT = (V *)malloc(sizeof(V));
+            DT = std::allocator<V>().allocate(1);
             Insertion.first->second = DT;
         } else {
             DT = Insertion.first->second;
@@ -71,7 +71,7 @@ protected:
     static thread_local Buffer<Type *, PointerType> PointerTypes;
 
     // Type context should be handled by context.
-    Type(TypeID tid) : ID(tid){}
+    explicit Type(TypeID tid) : ID(tid){}
     ~Type() = default;
 
 public:

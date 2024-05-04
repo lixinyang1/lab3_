@@ -3,42 +3,32 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <memory>
+#include <cstdio>
 #include <string_view>
 #include <vector>
 
 Use::Use(Value *Parent) : Parent(Parent) { }
 
-Use::Use(Use &&Other) noexcept {
-    Parent = Other.Parent;
-    Val = Other.Val;
-    Other.Parent = nullptr;
-    Other.Val = nullptr;
 
-    Val->removeUse(Other);
-    Val->addUse(*this);
-}
-
-void Use::removeFromList(Value *Used) {
-    auto &UseListHead = Used->UserIter;
-    if (getUser() == *UseListHead)
-        ++UseListHead;
-    ListNode<Use>::removeFromList();
-}
-
-void Use::addToList(Value *Used) {
-    auto &UseListHead = Used->UserIter; 
-    if (!UseListHead.getNodePtr()) {
-        UseListHead->insertBefore(this);
-        UseListHead--;
-    } else {
-        UseListHead = Value::UserIterType(this);
+void Use::removeFromList() {
+    *Prev = Next;
+    if (Next) {
+        Next->Prev = Prev;
     }
+}
+
+void Use::addToList(Use **UseList) {
+    Next = *UseList;
+    if (Next) {
+        Next->Prev = &Next;
+    }
+    Prev = UseList;
+    *Prev = this;
 }
 
 void Use::set(Value *V) {
     if (Val)
-        removeFromList(Val);
+        removeFromList();
     Val = V;
     if (V)
         V->addUse(*this);
@@ -47,6 +37,11 @@ void Use::set(Value *V) {
 
 Value::Value(Type *Ty, unsigned scid)
     : SubclassID(scid), Ty(Ty) {} 
+
+Value::~Value() {
+    // remove all uses.
+    replaceAllUsesWith(nullptr);
+}
 
 unsigned Value::getNumUses() const {
     auto view = getUserView();
@@ -57,12 +52,12 @@ unsigned Value::getNumUses() const {
 }
 
 void Value::replaceAllUsesWith(Value *V) {
-    std::vector<UserIterType> Uses;
+    std::vector<Use *> Uses;
     auto view = getUserView();
-    for (auto I = view.begin(), IE = view.end(); I != IE; ++I)
-        Uses.push_back(I);
+    for (auto &I : view)
+        Uses.push_back(&I);
     
-    for (auto &I: Uses)
+    for (auto I: Uses)
         I->set(V);
 }
 
@@ -100,10 +95,14 @@ ConstantUnit *ConstantUnit::Create() {
 Instruction::Instruction(Type *Ty, unsigned Opcode, 
                          const std::vector<Value *> &Ops,
                          Instruction *InsertBefore) 
-    : Value(Ty, Value::InstructionVal + Opcode) {
-    for (auto *Op: Ops) {
-        Operands.emplace_back(this);
-        Operands.back().set(Op);
+    : Value(Ty, Value::InstructionVal + Opcode),
+      NumUserOperands(Ops.size()) {
+    if (NumUserOperands > 0) {
+        Uses = std::allocator<Use>().allocate(NumUserOperands);
+        for (unsigned i = 0, e = NumUserOperands; i != e; ++i) {
+            new (Uses + i) Use(this);
+            Uses[i].set(Ops[i]);
+        }
     }
     if (InsertBefore) {
         BasicBlock *BB = InsertBefore->getParent();
@@ -115,16 +114,29 @@ Instruction::Instruction(Type *Ty, unsigned Opcode,
 Instruction::Instruction(Type *Ty, unsigned Opcode,
                          const std::vector<Value *> &Ops, 
                          BasicBlock *InsertAtEnd)
-    : Value(Ty, Value::InstructionVal + Opcode) {
-    for (auto *Op: Ops) {
-        Operands.emplace_back(this);
-        Operands.back().set(Op);
+    : Value(Ty, Value::InstructionVal + Opcode), 
+      NumUserOperands(Ops.size()) {
+    if (NumUserOperands > 0) {
+        Uses = std::allocator<Use>().allocate(NumUserOperands);
+        for (unsigned i = 0, e = NumUserOperands; i != e; ++i) {
+            new (Uses + i) Use(this);
+            Uses[i].set(Ops[i]);
+        }
     }
     if (InsertAtEnd) {
         insertInto(InsertAtEnd, InsertAtEnd->end());
     }
 }
 
+Instruction::~Instruction() {
+    if (NumUserOperands > 0) {
+        for (unsigned i = 0, e = NumUserOperands; i != e; ++i) {
+            Uses[i].~Use();
+        }
+        std::allocator<Use>().deallocate(Uses, NumUserOperands);
+        Uses = nullptr;
+    }
+}
 
 void Instruction::setParent(BasicBlock *BB) {
     Parent = BB;
@@ -195,18 +207,18 @@ BinaryInst *BinaryInst::Create(BinaryOps Op, Value *LHS, Value *RHS, Type *Ty,
     return Res;
 }
 
-AllocaInst::AllocaInst(Type *PointerType, std::size_t NumElements, Instruction *InsertBefore)
-    : Instruction(PointerType::get(PointerType), Instruction::Alloca, 
+AllocaInst::AllocaInst(Type *PointeeType, std::size_t NumElements, Instruction *InsertBefore)
+    : Instruction(PointerType::get(PointeeType), Instruction::Alloca, 
     { }, InsertBefore),
-      NumElements(NumElements) {
-    assert(!PointerType->isUnitTy() && "Cannot allocate () type!");
+      AllocatedType(PointeeType), NumElements(NumElements) {
+    assert(!PointeeType->isUnitTy() && "Cannot allocate () type!");
 }
 
-AllocaInst::AllocaInst(Type *PointerType, std::size_t NumElements, BasicBlock *InsertAtEnd)
-    : Instruction(PointerType::get(PointerType), Instruction::Alloca, 
+AllocaInst::AllocaInst(Type *PointeeType, std::size_t NumElements, BasicBlock *InsertAtEnd)
+    : Instruction(PointerType::get(PointeeType), Instruction::Alloca, 
     { }, InsertAtEnd),
-      NumElements(NumElements) {
-    assert(!PointerType->isUnitTy() && "Cannot allocate () type!");
+      AllocatedType(PointeeType), NumElements(NumElements) {
+    assert(!PointeeType->isUnitTy() && "Cannot allocate () type!");
 }
 
 
@@ -270,7 +282,7 @@ void OffsetInst::AssertOK() const {
     assert(getOperand(0)->getType()->isPointerTy() && "Offset pointer is not of the pointer type!");
     assert(dyn_cast<PointerType>(getOperand(0)->getType())->getElementType() == ElementTy &&
            "Element type of offset does not match the type of pointer!");
-    assert(getNumUses() == (unsigned)(bounds().size() + 1) && "Num of indices and bounds does not match!");
+    assert(getNumOperands() == (unsigned)(bounds().size() + 1) && "Num of indices and bounds does not match!");
 }
 
 OffsetInst::OffsetInst(Type *PointeeTy,
@@ -323,8 +335,8 @@ bool OffsetInst::accumulateConstantOffset(std::size_t &Offset) const {
     }
     no_option_bounds.emplace_back(1);
 
-    for (auto &Op: getOperands()) {
-        if (auto *Index = dyn_cast<ConstantInt>(Op.get())) {
+    for (const_op_iterator Op = op_begin() + 1, E = op_end(); Op != E; ++Op) {
+        if (auto *Index = dyn_cast<ConstantInt>(Op->get())) {
             indices.emplace_back(Index->getValue());
         } else {
             return false;
@@ -333,7 +345,7 @@ bool OffsetInst::accumulateConstantOffset(std::size_t &Offset) const {
 
     size_t TotalOffset = 0;
     for (size_t dim = 0; dim < indices.size(); ++dim) {
-        TotalOffset += indices[dim] * no_option_bounds[dim];
+        TotalOffset = (TotalOffset + indices[dim]) * no_option_bounds[dim];
     }
     Offset += TotalOffset;
 
@@ -466,16 +478,24 @@ PanicInst *PanicInst::Create(BasicBlock *InsertAtEnd) {
 }
 
 BasicBlock::BasicBlock(Function *Parent, BasicBlock *InsertBefore)
-    : Parent(Parent) {
-    if (InsertBefore) {
-        Parent->getBasicBlockList().insert(Function::iterator(InsertBefore), this);
+    : Parent(nullptr) {
+    if (Parent) {
+        insertInto(Parent, InsertBefore);
+    } else {
+        assert(!InsertBefore && "Cannot insert before another basic block with no function!");
     }
 }
 
-void BasicBlock::insertInto(Function *Parent, BasicBlock *InsertBefore) {
-    assert(getParent() == nullptr && "Expected detached basic block!");
-    Parent->getBasicBlockList().insert(Function::iterator(InsertBefore), this);
-    this->Parent = Parent;
+void BasicBlock::insertInto(Function *NewParent, BasicBlock *InsertBefore) {
+    assert(NewParent && "Expected a parent function!");
+    assert(!Parent && "BasicBlock already has a parent!");
+
+    if (InsertBefore) {
+        NewParent->getBasicBlockList().insert(Function::iterator(InsertBefore), this);
+    } else {
+        NewParent->getBasicBlockList().insert(NewParent->end(), this);
+    }
+    Parent = NewParent;
 }
 
 BasicBlock *BasicBlock::Create(Function *Parent, BasicBlock *InsertBefore) {
@@ -513,7 +533,7 @@ Function::Function(FunctionType *FTy, bool ExternalLinkage,
         Arguments = std::allocator<Argument>().allocate(NumArgs);
         for (unsigned i = 0, e = NumArgs; i != e; ++i) {
             Type *ArgTy = FTy->getParamType(i);
-            assert(!FunctionType::isValidArgumentType(ArgTy) && "Badly typed arguments!");
+            assert(FunctionType::isValidArgumentType(ArgTy) && "Badly typed arguments!");
             new (Arguments + i) Argument(ArgTy, this, i);
         }
     }

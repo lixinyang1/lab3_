@@ -94,6 +94,8 @@ public:
     // workaround for no ListNodeImpl interface.
     friend class List<T>;
 
+    using iterator = ListIterator<T, false, false>;
+
 protected:
     ListNode *Prev = nullptr;
     ListNode *Next = nullptr;
@@ -113,43 +115,29 @@ public:
     const_pointer getPrevNode() const { return Prev->getValuePtr(); }
 
 protected:
-    /// Private insertion & removal interface
-    void insertBefore(pointer Node) {
+    /// Private insertion & removal interface.
+    static iterator insert(iterator where, pointer Node) {
         if (Node) {
-            if (Prev) {
-                Prev->Next = Node;
+            if (where->Prev) {
+                where->Prev->Next = Node;
             }
-            Node->Next = this;
-            Node->Prev = Prev;
-            Prev = Node;
+            Node->Next = where.getNodePtr();
+            Node->Prev = where->Prev;
+            where->Prev = Node;
         }
+        return iterator(Node);
     }
 
-    void insertAfter(pointer Node) {
-        if (Node) {
-            if (Next) {
-                Next->Prev = Node;
-            }
-            Node->Next = Next;
-            Node->Prev = this;
-            Next = Node;
+    static void remove(reference Node) {
+        if (Node.Prev) {
+            Node.Prev->Next = Node.Next;
         }
+        if (Node.Next) {
+            Node.Next->Prev = Node.Prev;
+        }
+        Node.Prev = Node.Next = nullptr;
     }
 
-    void removeFromList() {
-        if (Prev) {
-            Prev->Next = Next;
-        }
-        if (Next) {
-            Next->Prev = Prev;
-        }
-        Prev = Next = nullptr;
-    }
-
-    void removeAndDispose() {
-        removeFromList();
-        delete this;
-    }
 };
 
 /// An intrusive double linked list with ownership.
@@ -174,8 +162,11 @@ public:
 protected:
     ListNode<T> Sentinel;
 
+    void resetSentinel() {
+        Sentinel.Next = Sentinel.Prev = &Sentinel;
+    }
 public:
-    List() = default;
+    List() { resetSentinel();}
     // Destruct all nodes in the list.
     ~List() { clear(); }
     // Intrusive list has the ownership of data, so we do not allow copy here.
@@ -212,8 +203,7 @@ public:
     const_reference back() const { return *crbegin(); }
 
     iterator insert(iterator pos, pointer New) {
-        New->insertBefore(pos->getValuePtr());
-        return iterator(New);
+        return ListNode<T>::insert(pos, New);
     }
 
     iterator insertAfter(iterator pos, pointer New) {
@@ -226,7 +216,7 @@ public:
     /// Remove a node from list.
     pointer remove(iterator &IT) {
         pointer Node = &*IT++;
-        Node->removeFromList();
+        ListNode<T>::remove(*Node);
         return Node;
     }
 
@@ -241,7 +231,7 @@ public:
     /// Remove a node from list and delete it, return the iterator forwarded.
     iterator erase(iterator IT) {
         iterator Node = IT++;
-        Node->removeAndDispose();
+        delete (remove(Node));
         return IT;
     }
 

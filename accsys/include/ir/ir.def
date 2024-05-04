@@ -58,10 +58,10 @@ ConstantMarker(ConstantFirstVal, ConstantInt)
 ConstantMarker(ConstantLastVal, ConstantUnit)
 
 // Other Value class
-ValueTypeDefine(Instruction)
 ValueTypeDefine(Argument)
 ValueTypeDefine(GlobalVariable)
-
+// Instruction must be the last Value.
+ValueTypeDefine(Instruction)
 // Binary instructions
   FirstBinaryInst(1)
 BinaryInstDefine( 1, Add, BinaryInst)

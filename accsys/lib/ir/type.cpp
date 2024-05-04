@@ -1,5 +1,5 @@
 #include "ir/type.h"
-
+#include <cstdio>
 
 Type Type::IntegerTy(Type::IntegerTyID);
 Type Type::UnitTy(Type::UnitTyID);

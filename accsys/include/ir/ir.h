@@ -28,15 +28,18 @@ class Module;
 /// \brief A use is a edge from the operands of a 'Value'
 /// to the definition of the used 'Value', which maintains
 /// 'use-def' chain.
-class Use: public ListNode<Use> {
+/// The used value maintains a list of 'Use' objects
+/// representing its users, while user maintains its operands
+/// in a plain linear memory.
+class Use {
 public:
     Use() = delete;
     Use(const Use &) = delete;
-    Use(Use &&) noexcept;
+    Use(Use &&) = delete;
 
     /// 'use-def' chain and 'def-use' chain are double linked list.
-    void addToList(Value *);
-    void removeFromList(Value *);
+    void addToList(Use **);
+    void removeFromList();
 
 
     operator Value *() const { return Val; }
@@ -55,14 +58,12 @@ public:
         set(RHS.Val);
         return *this;
     }
-public:
-    /// FIXME: Priave constructor and destructor by design, 
+private:
+    /// Priave constructor and destructor by design, 
     /// should be only called by subclasses of 'Value'.
-    ///
-    /// make std::vector<Use> happy.
-    ~Use() override {
+    ~Use() {
         if (Val)
-            removeFromList(Val);
+            removeFromList();
     }
     /// make emplace_back happy.
     explicit Use(Value *Parent);
@@ -71,6 +72,10 @@ private:
     Value *Parent = nullptr;
     // Used value
     Value *Val = nullptr;
+    // Next use in the list.
+    Use *Next = nullptr;
+    // Prev use in the list, reprensented by a list.
+    Use **Prev = nullptr;
 public:
     friend Value;
     friend Instruction;
@@ -86,26 +91,43 @@ protected:
 public:
     Value(const Value &) = delete;
     Value &operator=(const Value &) = delete;
+    virtual ~Value();
 
     /// Inner Use list operation, should be only be called by Use.
-    void addUse(Use &U) { U.addToList(this); }
-    void removeUse(Use &U) { U.removeFromList(this); }
+    void addUse(Use &U) { U.addToList(&UserList); }
+    void removeUse(Use &U) { U.removeFromList(); }
     /// Traverse all the user of this 'Value'.
     /// 'def-use' chain maintained by a double linked list and
     /// represented by Use as well.
-    using UserIterType = List<Use>::iterator;
 
     struct UserView {
-        const UserIterType &UserStart;
-        UserIterType begin() { return UserStart; }
-        UserIterType end() {
+        struct user_iterator {
+            Use *U;
+            user_iterator &operator++() {
+                U = U->Next;
+                return *this;
+            }
+            bool operator==(const user_iterator &RHS) const {
+                return U == RHS.U;
+            }
+            bool operator!=(const user_iterator &RHS) const {
+                return U != RHS.U;
+            }
+            Use &operator*() const { return *U; }
+            Use *operator->() const { return U; }
+        };
+        Use *UserList;
+        decltype(auto) begin() const { return user_iterator {.U = UserList}; }
+        decltype(auto) end() const {
             // null end iterator.
-            return UserIterType(); 
+            return user_iterator {.U = nullptr};
         }
     };
 
-    [[nodiscard]] UserView getUserView() const { return UserView {.UserStart = UserIter}; }
-    unsigned getNumUses() const;
+    [[nodiscard]] UserView getUserView() const { return UserView {.UserList = UserList}; }
+    /// Return the number of uses of this value.
+    /// Distinguish between Value's 'getNumUses' and Instructions's 'getNumOperands'.
+    [[nodiscard]] unsigned getNumUses() const;
     /// \brief This is an important method if you'd like to write
     /// a optimization pass on Accipit IR. It replace all the uses 
     /// of this value with a new value V by tracing 'def-use' chain.
@@ -113,7 +135,7 @@ public:
     void replaceAllUsesWith(Value *V);
 private:
     Type *Ty;
-    UserIterType UserIter;
+    Use *UserList = nullptr;
     std::string Name;
 public:
     Type *getType() const { return Ty; }
@@ -153,7 +175,7 @@ public:
 class ConstantInt: public Constant {
     std::uint32_t value;
 protected:
-    ConstantInt(std::uint32_t Val);
+    explicit ConstantInt(std::uint32_t Val);
 public:
     static ConstantInt *Create(std::uint32_t Val);
 
@@ -183,6 +205,7 @@ class Instruction: public Value,
 public:
     Instruction(const Instruction &) = delete;
     Instruction &operator=(const Instruction &) = delete;
+    ~Instruction() override;
 
     // All instructions has two explicit static constructing methods,
     // specifying the instruction parameters, operands and the insertion position.
@@ -199,10 +222,11 @@ public:
                 BasicBlock *InsertAtEnd);
 
     using InstListType = List<Instruction>;
-    using op_iterator = typename std::vector<Use>::iterator;
-    using const_op_iterator = typename std::vector<Use>::const_iterator;
+    using op_iterator = Use *;
+    using const_op_iterator = const Use *;
 private:
-    std::vector<Use> Operands;
+    unsigned NumUserOperands;
+    Use *Uses = nullptr;
     BasicBlock *Parent = nullptr;
 
     void setParent(BasicBlock *BB);
@@ -227,14 +251,28 @@ public:
     unsigned getOpcode() const { return getValueID() - InstructionVal; }
     /// Get the operands (use information) of Instruction, represented by
     /// a 'Use' class.
-    const std::vector<Use> &getOperands() const { return Operands; }
-    std::vector<Use> &getOperands() { return Operands; }
-    Value *getOperand(unsigned index) const { return getOperands()[index]; }
+    const Use *getOperandList() const { return Uses; }
+    Use *getOperandList() { return Uses; }
+    Value *getOperand(unsigned index) const {
+        assert(index < getNumOperands() && "getOperand() out of range!");
+        return getOperandList()[index];
+    }
+    const Use &getOperandUse(unsigned index) const {
+        return getOperandList()[index];
+    }
+    Use &getOperandUse(unsigned index) {
+        return getOperandList()[index];
+    }
+    unsigned getNumOperands() const { return NumUserOperands; }
     /// Operands iteration.
-    op_iterator op_begin() { return Operands.begin(); }
-    const_op_iterator op_begin() const { return Operands.cbegin(); }
-    op_iterator op_end() { return Operands.end(); }
-    const_op_iterator op_end() const { return Operands.cend(); }
+    op_iterator op_begin() { return getOperandList(); }
+    const_op_iterator op_begin() const { return getOperandList(); }
+    op_iterator op_end() {
+        return getOperandList() + NumUserOperands;
+    }
+    const_op_iterator op_end() const {
+        return getOperandList() + NumUserOperands;
+    }
 
 
     bool isBinaryOp() const { return isBinaryOp(getOpcode()); }
@@ -300,14 +338,15 @@ public:
 public:
     /// forward to Create, useful when you know what type of instruction you are going to create.
 #define BinaryInstDefine(Num, Opcode, Subclass) \
-    static BinaryInst *Create##Opcode(Value *LHS, Value *RHS, Type *Ty) { \
-        return Create(Instruction::Opcode, LHS, RHS, Ty); \
+    static BinaryInst *Create##Opcode(Value *LHS, Value *RHS, Type *Ty, Instruction *I) { \
+        return Create(Instruction::Opcode, LHS, RHS, Ty, I); \
     }
 #include "ir.def"
 #define BinaryInstDefine(Num, Opcode, SubClass) \
-    static BinaryInst *Create##Opcode(Value *LHS, Value *RHS, Type *Ty) { \
-        return Create(Instruction::Opcode, LHS, RHS, Ty); \
+    static BinaryInst *Create##Opcode(Value *LHS, Value *RHS, Type *Ty, BasicBlock *BB) { \
+        return Create(Instruction::Opcode, LHS, RHS, Ty, BB); \
     }
+#include "ir.def"
 
     static bool classof(const Value *V) { 
         return isa<Instruction>(V) && dyn_cast<Instruction>(V)->isBinaryOp();
@@ -351,11 +390,11 @@ public:
                              BasicBlock *InsertAtEnd);
 public:
     // stored value.
-    Value *getValue() const { return getOperand(0); }
-    Type *getValueOperandType() const { return getValue()->getType(); }
+    Value *getValueOperand() const { return getOperand(0); }
+    Type *getValueOperandType() const { return getValueOperand()->getType(); }
     // stored destination pointer type value.
-    Value *getPointer() const { return getOperand(1); }
-    Type *getPointerOperandType() const { return getPointer()->getType(); }
+    Value *getPointerOperand() const { return getOperand(1); }
+    Type *getPointerOperandType() const { return getPointerOperand()->getType(); }
 
     static bool classof(const Instruction *I) {
         return I->getOpcode() == Instruction::Store;
@@ -550,8 +589,8 @@ public:
 /// You are NOT required to handle this instruction.
 class PanicInst: public Instruction {
 protected:
-    PanicInst(Instruction *InsertBefore);
-    PanicInst(BasicBlock *InsertAtEnd);
+    explicit PanicInst(Instruction *InsertBefore);
+    explicit PanicInst(BasicBlock *InsertAtEnd);
 public:
     static PanicInst *Create(Instruction *InsertBefore = nullptr);
     static PanicInst *Create(BasicBlock *InsertAtEnd);
@@ -651,8 +690,10 @@ class Function final: public ListNode<Function> {
 private:
     Function(FunctionType *FTy, bool ExternalLinkage, 
              std::string_view Name, Module *M);
-    ~Function() final;
 public:
+    Function(const Function&) = delete;
+    void operator=(const Function&) = delete;
+    ~Function() final;
     /// Basic blocks iteration.
     using BasicBlockListType = List<BasicBlock>;
     using iterator = BasicBlockListType::iterator;
