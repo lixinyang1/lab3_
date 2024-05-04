@@ -12,7 +12,7 @@ struct isa_impl {
 // Always allow upcasting
 template <typename To, typename From>
 struct isa_impl<To, From, std::enable_if_t<std::is_base_of_v<To, From>>> {
-    static inline bool doit(const From &Val) { return true; }
+    static inline bool doit(const From &) { return true; }
 };
 
 

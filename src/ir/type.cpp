@@ -63,3 +63,11 @@ FunctionType *FunctionType::get(Type *Result, const std::vector<Type *> &Params)
 FunctionType *FunctionType::get(Type *Result) {
     return FunctionType::get(Result, {});
 }
+
+bool FunctionType::isValidReturnType(Type *RetTy) {
+    return !RetTy->isFunctionTy();
+}
+
+bool FunctionType::isValidArgumentType(Type *ArgTy) {
+    return ArgTy->isFirstClassType();
+}

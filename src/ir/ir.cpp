@@ -3,12 +3,13 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string_view>
 #include <vector>
 
 Use::Use(Value *Parent) : Parent(Parent) { }
 
-Use::Use(Use &&Other) {
+Use::Use(Use &&Other) noexcept {
     Parent = Other.Parent;
     Val = Other.Val;
     Other.Parent = nullptr;
@@ -81,7 +82,8 @@ Constant::Constant(Type *Ty, unsigned VT)
     : Value(Ty, VT) {}
 
 ConstantInt::ConstantInt(std::uint32_t Val)
-    : Constant(Type::getIntegerTy(), Value::ConstantIntVal) {}
+    : Constant(Type::getIntegerTy(), Value::ConstantIntVal),
+      value(Val) {}
 
 ConstantInt *ConstantInt::Create(std::uint32_t Val) {
     return new ConstantInt(Val);
@@ -195,23 +197,25 @@ BinaryInst *BinaryInst::Create(BinaryOps Op, Value *LHS, Value *RHS, Type *Ty,
 
 AllocaInst::AllocaInst(Type *PointerType, std::size_t NumElements, Instruction *InsertBefore)
     : Instruction(PointerType::get(PointerType), Instruction::Alloca, 
-    { }, InsertBefore) {
+    { }, InsertBefore),
+      NumElements(NumElements) {
     assert(!PointerType->isUnitTy() && "Cannot allocate () type!");
 }
 
 AllocaInst::AllocaInst(Type *PointerType, std::size_t NumElements, BasicBlock *InsertAtEnd)
     : Instruction(PointerType::get(PointerType), Instruction::Alloca, 
-    { }, InsertAtEnd) {
+    { }, InsertAtEnd),
+      NumElements(NumElements) {
     assert(!PointerType->isUnitTy() && "Cannot allocate () type!");
 }
 
 
-AllocaInst *AllocaInst::Create(Type *PointeeTy, std::uint64_t NumElements,
+AllocaInst *AllocaInst::Create(Type *PointeeTy, std::size_t NumElements,
                               Instruction *InsertBefore) {
     return new AllocaInst(PointeeTy, NumElements, InsertBefore);
 }
 
-AllocaInst *AllocaInst::Create(Type *PointeeTy, std::uint64_t NumElements,
+AllocaInst *AllocaInst::Create(Type *PointeeTy, std::size_t NumElements,
                               BasicBlock *InsertAtEnd) {
     auto *Res = Create(PointeeTy, NumElements);
     Res->insertInto(InsertAtEnd, InsertAtEnd->end());
@@ -240,6 +244,27 @@ StoreInst *StoreInst::Create(Value *Val, Value *Ptr,
     return Res;
 }
 
+LoadInst::LoadInst(Value *Ptr, Instruction *InsertBefore)
+    : Instruction(dyn_cast<PointerType>(Ptr->getType())->getElementType(),
+    Instruction::Load, { Ptr }, InsertBefore) {
+    assert(Ptr->getType()->isPointerTy() && "Cannot load from non-pointer type!");
+}
+
+LoadInst::LoadInst(Value *Ptr, BasicBlock *InsertAtEnd)
+    : Instruction(dyn_cast<PointerType>(Ptr->getType())->getElementType(),
+    Instruction::Load, { Ptr }, InsertAtEnd) {
+    assert(Ptr->getType()->isPointerTy() && "Cannot load from non-pointer type!");
+}
+
+LoadInst *LoadInst::Create(Value *Ptr, Instruction *InsertBefore) {
+    return new LoadInst(Ptr, InsertBefore);
+}
+
+LoadInst *LoadInst::Create(Value *Ptr, BasicBlock *InsertAtEnd) {
+    auto *Res = Create(Ptr);
+    Res->insertInto(InsertAtEnd, InsertAtEnd->end());
+    return Res;
+}
 
 void OffsetInst::AssertOK() const {
     assert(getOperand(0)->getType()->isPointerTy() && "Offset pointer is not of the pointer type!");
@@ -315,6 +340,76 @@ bool OffsetInst::accumulateConstantOffset(std::size_t &Offset) const {
     return true;
 }
 
+CallInst::CallInst(Function *Callee, 
+                   const std::vector<Value *> &Args,
+                   Instruction *InsertBefore)
+    : Instruction(Callee->getReturnType(), Instruction::Call, Args, InsertBefore),
+      Callee(Callee) {
+    assert(Callee->getNumParams() == Args.size() && "Number of arguments does not match number of parameters!");
+}
+
+CallInst::CallInst(Function *Callee, 
+                   const std::vector<Value *> &Args,
+                   BasicBlock *InsertAtEnd)
+    : Instruction(Callee->getReturnType(), Instruction::Call, Args, InsertAtEnd),
+      Callee(Callee) {
+    assert(Callee->getNumParams() == Args.size() && "Number of arguments does not match number of parameters!");
+}
+
+CallInst *CallInst::Create(Function *Callee, 
+                           const std::vector<Value *> &Args,
+                           Instruction *InsertBefore) {
+    return new CallInst(Callee, Args, InsertBefore);
+}
+
+CallInst *CallInst::Create(Function *Callee, 
+                           const std::vector<Value *> &Args,
+                           BasicBlock *InsertAtEnd) {
+    auto *Res = Create(Callee, Args);
+    Res->insertInto(InsertAtEnd, InsertAtEnd->end());
+    return Res;
+}
+
+JumpInst::JumpInst(BasicBlock *Dest, Instruction *InsertBefore)
+    : Instruction(Type::getUnitTy(), Instruction::Jump, { }, InsertBefore),
+      Dest(Dest) {
+}
+
+JumpInst::JumpInst(BasicBlock *Dest, BasicBlock *InsertAtEnd)
+    : Instruction(Type::getUnitTy(), Instruction::Jump, { }, InsertAtEnd),
+      Dest(Dest) {
+}
+
+JumpInst *JumpInst::Create(BasicBlock *Dest, Instruction *InsertBefore) {
+    return new JumpInst(Dest, InsertBefore);
+}
+
+JumpInst *JumpInst::Create(BasicBlock *Dest, BasicBlock *InsertAtEnd) {
+    auto *Res = Create(Dest);
+    Res->insertInto(InsertAtEnd, InsertAtEnd->end());
+    return Res;
+}
+
+RetInst::RetInst(Value *Val, Instruction *InsertBefore)
+    : Instruction(Type::getUnitTy(), Instruction::Ret, { Val }, InsertBefore) {
+
+}
+
+RetInst::RetInst(Value *Val, BasicBlock *InsertAtEnd)
+    : Instruction(Type::getUnitTy(), Instruction::Ret, { Val }, InsertAtEnd) {
+
+}
+
+RetInst *RetInst::Create(Value *Val, Instruction *InsertBefore) {
+    return new RetInst(Val, InsertBefore);
+}
+
+RetInst *RetInst::Create(Value *Val, BasicBlock *InsertAtEnd) {
+    auto *Res = Create(Val);
+    Res->insertInto(InsertAtEnd, InsertAtEnd->end());
+    return Res;
+}
+
 void BranchInst::AssertOK() const {
     assert(getCondition()->getType()->isIntegerTy() &&
            "May only branch on integer predicate!");
@@ -322,13 +417,15 @@ void BranchInst::AssertOK() const {
 
 BranchInst::BranchInst(BasicBlock *IfTrue, BasicBlock *IfFalse, Value *Cond, Instruction *InsertBefore)
     : Instruction(Type::getUnitTy(), Instruction::Br, 
-    { Cond }, InsertBefore) {
+    { Cond }, InsertBefore),
+      IfTrue(IfTrue), IfFalse(IfFalse) {
     AssertOK();
 } 
 
 BranchInst::BranchInst(BasicBlock *IfTrue, BasicBlock *IfFalse, Value *Cond, BasicBlock *InsertAtEnd)
     : Instruction(Type::getUnitTy(), Instruction::Br,
-    { Cond }, InsertAtEnd) {
+    { Cond }, InsertAtEnd),
+      IfTrue(IfTrue), IfFalse(IfFalse) {
     AssertOK();
 }
 
@@ -345,4 +442,122 @@ BranchInst *BranchInst::Create(BasicBlock *IfTrue, BasicBlock *IfFalse,
     auto *Res = Create(IfTrue, IfFalse, Cond);
     Res->insertInto(InsertAtEnd, InsertAtEnd->end());
     return Res;
+}
+
+
+PanicInst::PanicInst(Instruction *InsertBefore)
+    : Instruction(Type::getUnitTy(), Instruction::Panic, { }, InsertBefore) {
+
+}
+
+PanicInst::PanicInst(BasicBlock *InsertAtEnd)
+    : Instruction(Type::getUnitTy(), Instruction::Panic, { }, InsertAtEnd) {
+
+}
+
+PanicInst *PanicInst::Create(Instruction *InsertBefore) {
+    return new PanicInst(InsertBefore);
+}
+
+PanicInst *PanicInst::Create(BasicBlock *InsertAtEnd) {
+    auto *Res = Create();
+    Res->insertInto(InsertAtEnd, InsertAtEnd->end());
+    return Res;
+}
+
+BasicBlock::BasicBlock(Function *Parent, BasicBlock *InsertBefore)
+    : Parent(Parent) {
+    if (InsertBefore) {
+        Parent->getBasicBlockList().insert(Function::iterator(InsertBefore), this);
+    }
+}
+
+void BasicBlock::insertInto(Function *Parent, BasicBlock *InsertBefore) {
+    assert(getParent() == nullptr && "Expected detached basic block!");
+    Parent->getBasicBlockList().insert(Function::iterator(InsertBefore), this);
+    this->Parent = Parent;
+}
+
+BasicBlock *BasicBlock::Create(Function *Parent, BasicBlock *InsertBefore) {
+    return new BasicBlock(Parent, InsertBefore);
+}
+
+
+void BasicBlock::setParent(Function *Parent) {
+    this->Parent = Parent;
+}
+
+bool BasicBlock::hasName() const {
+    return !Name.empty();
+}
+
+
+void BasicBlock::setName(std::string_view Name) {
+    this->Name = Name;
+}
+
+
+Function::Function(FunctionType *FTy, bool ExternalLinkage,
+                   std::string_view Name, Module *M)
+    : FTy(FTy), NumArgs(FTy->getNumParams()),
+      ExternalLinkage(ExternalLinkage), Name(Name), Parent(M) {
+    // check return type.
+    assert(FunctionType::isValidReturnType(getReturnType()) &&
+            "invalid return type");
+    // build parameters and check parameter types.
+    if (NumArgs > 0) {
+        Arguments = std::allocator<Argument>().allocate(NumArgs);
+        for (unsigned i = 0, e = NumArgs; i != e; ++i) {
+            Type *ArgTy = FTy->getParamType(i);
+            assert(!FunctionType::isValidArgumentType(ArgTy) && "Badly typed arguments!");
+            new (Arguments + i) Argument(ArgTy, this, i);
+        }
+    }
+
+    if (M) {
+        M->getFunctionList().push_back(this);
+        M->SymbolFunctionMap[getName()] = this;
+    }
+}
+
+Function::~Function() {
+    if (NumArgs > 0) {
+        for (unsigned i = 0, e = NumArgs; i != e; ++i) {
+            Arguments[i].~Argument();
+        }
+        std::allocator<Argument>().deallocate(Arguments, NumArgs);
+        Arguments = nullptr;
+    }
+    // remove symbol table entry.
+    if (Parent) {
+        Parent->SymbolFunctionMap.erase(getName());
+    }
+}
+
+Function *Function::Create(FunctionType *FTy, bool ExternalLinkage, 
+                           std::string_view Name, Module *M) {
+    return new Function(FTy, ExternalLinkage, Name, M);
+}
+
+Function::iterator Function::insert(Function::iterator Position, BasicBlock *BB) {
+    Function::iterator FIT = getBasicBlockList().insert(Position, BB);
+    BB->setParent(this);
+    return FIT;
+}
+
+GlobalVariable::GlobalVariable(Type *EleTy, std::size_t NumElements, bool ExternalLinkage,
+                               std::string_view Name, Module *M)
+    : Value(PointerType::get(EleTy), Value::GlobalVariableVal),
+      EleTy(EleTy), NumElements(NumElements),
+      ExternalLinkage(ExternalLinkage), Name(Name), Parent(M) {
+    assert(!EleTy->isUnitTy() && "Cannot create global variable of () type!");
+    if (M) {
+        M->getGlobalList().push_back(this);
+        M->SymbolGlobalMap[getName()] = this;
+    }
+}
+
+GlobalVariable *GlobalVariable::Create(Type *EleTy, std::size_t NumElements, bool ExternalLinkage,
+                                        std::string_view Name, Module *M) {
+    return new GlobalVariable(EleTy, NumElements, ExternalLinkage, Name, M);
 }

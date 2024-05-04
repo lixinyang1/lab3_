@@ -92,7 +92,7 @@ MemoryInstDefine( 18, Offset, OffsetInst)
   FirstTerminator(19)
 TerminatorDefine( 19, Ret, RetInst)
 TerminatorDefine( 20, Br, BranchInst)
-TerminatorDefine( 21, Jmp, JumpInst)
+TerminatorDefine( 21, Jump, JumpInst)
 TerminatorDefine( 22, Panic, PanicInst)
   LastTerminator( 22)
 
