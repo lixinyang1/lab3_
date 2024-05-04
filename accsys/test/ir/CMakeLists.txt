@@ -5,6 +5,7 @@ set(ACCSYS_LINK_COMPONENTS
 set(ACCSYS_TEST_SOURCES
     type_test.cpp
     instruction_test.cpp
+    function_test.cpp
 )
 accsys_add_test(IRTest
     "${ACCSYS_TEST_SOURCES}"
