@@ -123,10 +123,10 @@ public:
 
     enum ValueKind {
 #define ValueTypeDefine(subclass) subclass##Val,
-#include "common/ir.def"
+#include "ir.def"
 
 #define ConstantMarker(markname, constant) markname = constant##Val,
-#include "common/ir.def"
+#include "ir.def"
     };
 
     /// Return an ID for the concrete type of Value.
@@ -257,28 +257,28 @@ public:
 #define   FirstBinaryInst(Num)                   BinaryOpsBegin = Num,
 #define BinaryInstDefine( Num, Opcode, Subclass) Opcode = Num,
 #define   LastBinaryInst( Num)                   BinaryOpsEnd = Num,
-#include "common/ir.def"     
+#include "ir.def"     
     };
 
     enum MemoryOps {
 #define   FirstMemoryInst(Num)                   MemoryOpsBegin = Num,
 #define MemoryInstDefine( Num, Opcode, Subclass) Opcode = Num,
 #define   LastMemoryInst( Num)                   MemoryOpsEnd = Num,
-#include "common/ir.def"
+#include "ir.def"
     };
 
     enum TerminatorOps {
 #define   FirstTerminator(Num)                   TerminatorOpsBegin = Num,
 #define TerminatorDefine( Num, Opcode, Subclass) Opcode = Num,
 #define   LastTerminator( Num)                   TerminatorOpsEnd = Num,
-#include "common/ir.def"
+#include "ir.def"
     };
 
     enum OtherOps {
 #define   FirstOtherInst(Num)                   OtherInstBegin = Num,
 #define OtherInstDefine( Num, Opcode, Subclass) Opcode = Num,
 #define   LastOtherInst( Num)                   OtherInstEnd = Num,
-#include "common/ir.def"
+#include "ir.def"
     };    
 };
 
@@ -303,7 +303,7 @@ public:
     static BinaryInst *Create##Opcode(Value *LHS, Value *RHS, Type *Ty) { \
         return Create(Instruction::Opcode, LHS, RHS, Ty); \
     }
-#include "common/ir.def"
+#include "ir.def"
 #define BinaryInstDefine(Num, Opcode, SubClass) \
     static BinaryInst *Create##Opcode(Value *LHS, Value *RHS, Type *Ty) { \
         return Create(Instruction::Opcode, LHS, RHS, Ty); \
