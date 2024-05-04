@@ -30,6 +30,7 @@ cmake --build build     # build target in `build/` directory
 
 - 为 `clangd` 导出 `compile_commands.json`，可以添加 `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`.
 - 选用不同的构建系统生成器，使用 `-G` 指定，例如使用 `Ninja` 可以添加 `-G Ninja`.
+- 添加选项 `-DACCSYS_BUILD_TESTS=ON` 可以启用编译 googletest 与 accsys 库的单元测试.
 
 ## FAQ
 

@@ -497,6 +497,10 @@ void BasicBlock::setName(std::string_view Name) {
 }
 
 
+Argument::Argument(Type *Ty, Function *Parent, unsigned ArgNo)
+    : Value(Ty, Value::ArgumentVal), Parent(Parent), ArgNo(ArgNo) {
+}
+
 Function::Function(FunctionType *FTy, bool ExternalLinkage,
                    std::string_view Name, Module *M)
     : FTy(FTy), NumArgs(FTy->getNumParams()),

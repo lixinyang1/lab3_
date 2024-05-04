@@ -61,6 +61,7 @@ target_link_libraries(compiler PRIVATE fmt::fmt-header-only)
 # add accsys template library dependencies.
 add_subdirectory(accsys)
 target_link_libraries(compiler PRIVATE accsys::accsys)
+target_include_directories(compiler PRIVATE accsys::accsys)
 
 # some possible build options you may use.
 # you can specify whatever you prefer.
