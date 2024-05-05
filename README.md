@@ -51,6 +51,20 @@ cmake --build build --config Debug
 cmake --build build --config Release
 ```
 
+#### Accsys Components
+
+为了方便起见，我们把 IR 等相关组件的代码放在了 `accsys/` 目录下，提供了头文件和动态链接库.
+如果你不使用我们提供的模板，但打算复用一些 IR 的轮子，可以复制 `accsys/` 下的内容，并添加下列内容到你的 CMakeLists.txt
+
+```cmake
+# compile accsys components.
+add_subdirectory(accsys)
+
+# link accsys libraries to the executable.
+target_link_libraries(compiler PRIVATE accsys::accsys)
+# add accsys header files directory for the source files of the compiler.
+target_include_directories(compiler INTERFACE accsys::accsys)
+```
 
 #### Adjust Build Options (Optional)
 
