@@ -23,6 +23,35 @@ cmake -B build          # create & generate build configs under `build/` directo
 cmake --build build     # build target in `build/` directory
 ```
 
+#### CMake Build Type
+
+支持 `Debug` 或者 `Release` 构建配置：
+
+- 对于单配置构建系统 Makefile 和 Ninja，你可以通过设置 `CMAKE_BUILD_TYPE` 变量来指定构建配置
+- 对于多配置构建系统 Visual Studio， Xcode 或者 Ninja Multi-Config，我们已经设置了 `Debug` 和 `Release` 两种配置
+
+对于单配置构建系统，`CMAKE_BUILD_TYPE` 没有设置默认值，不会启用相关编译参数.
+在 `Debug` 模式下，默认开启 address sanitizer
+
+实例：
+
+```bash
+# single configuration build systems, Debug build
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefile"
+cmake --build build
+# single configuration build systems, Release build
+cmake -B build -DCMAKE_BUILD_TYPE=Release -G "Unix Makefile"
+cmake --build build
+
+# multi configuration build systems
+cmake -B build -G "Ninja Multi-Config"
+# Debug build
+cmake --build build --config Debug
+# Release build
+cmake --build build --config Release
+```
+
+
 #### Adjust Build Options (Optional)
 
 你可以自行修改 `CMakeLists.txt` 并添加编译选项或开关.
@@ -30,7 +59,8 @@ cmake --build build     # build target in `build/` directory
 
 - 为 `clangd` 导出 `compile_commands.json`，可以添加 `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`.
 - 选用不同的构建系统生成器，使用 `-G` 指定，例如使用 `Ninja` 可以添加 `-G Ninja`.
-- 添加选项 `-DACCSYS_BUILD_TESTS=ON` 可以启用编译 googletest 与 accsys 库的单元测试.
+- 添加选项 `-DACCSYS_BUILD_TESTS=ON` 可以启用编译 googletest 与 accsys 库的单元测试，使用 `cmake --build build --target test` 测试
+- 对于 Unix Makefile 构建系统生成器，默认为单线程编译，可以使用 `--parallel` 并行，例如 `cmake --build build --parallel 16`
 
 ## FAQ
 

@@ -7,6 +7,10 @@ project(compiler
 
 # CTest
 enable_testing()
+# cmake configurations
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs list: Debug, Release" FORCE)
+# set cmake debug postfix
+set(CMAKE_DEBUG_POSTFIX "d")
 
 # settings
 # set to OFF to enable C mode
@@ -21,9 +25,13 @@ message(STATUS "Flex/Bison generated source file extension: ${FB_EXT}")
 # enable all warnings
 if(MSVC)
   add_compile_options(/W3)
+  add_compile_options("$<$<CONFIG:Debug>:/fsanitize=address;/Zi>;$<$<CONFIG:Release>:/O2>")
+  add_link_options("$<$<CONFIG:Debug>:/fsanitize=address;/DEBUG:FULL>")
 else()
   # disable warnings caused by old version of Flex
   add_compile_options(-Wall -Wextra -Wno-register)
+  add_compile_options("$<$<CONFIG:Debug>:-O0;-g;-fsanitize=address;-fno-omit-frame-pointer;-fno-optimize-sibling-calls>;$<$<CONFIG:Release>:-O2;-DNDEBUG>")
+  add_link_options("$<$<CONFIG:Debug>:-fsanitize=address>")
 endif()
 
 # find Flex/Bison
@@ -61,7 +69,7 @@ target_link_libraries(compiler PRIVATE fmt::fmt-header-only)
 # add accsys template library dependencies.
 add_subdirectory(accsys)
 target_link_libraries(compiler PRIVATE accsys::accsys)
-target_include_directories(compiler PRIVATE accsys::accsys)
+target_include_directories(compiler INTERFACE accsys::accsys)
 
 # some possible build options you may use.
 # you can specify whatever you prefer.
