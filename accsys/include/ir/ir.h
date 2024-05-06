@@ -6,16 +6,13 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <iterator>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
 #include <vector>
 #include <optional>
 #include <string_view>
 
 
-class Type;
 class Value;
 class Instruction;
 class Constant;

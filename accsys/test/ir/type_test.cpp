@@ -1,4 +1,5 @@
 #include "ir/type.h"
+#include "utils/casting.h"
 
 #include "gtest/gtest.h"
 
