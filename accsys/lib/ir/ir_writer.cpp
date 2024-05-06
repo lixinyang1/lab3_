@@ -416,14 +416,14 @@ void AccipitWriter::printInstruction(const Instruction *I) {
             Out << "br ";
             auto *Br = cast<BranchInst>(I);
             WriteAsOperandInternal(Out, Br->getCondition(), Tracker, isForDebug);
-            Out << ", ";
+            Out << ", label ";
             WriteBasicBlockOperandInternal(Out, Br->getTrueBB(), Tracker, isForDebug);
-            Out << ", ";
+            Out << ", label ";
             WriteBasicBlockOperandInternal(Out, Br->getFalseBB(), Tracker, isForDebug);
             break;
         }
         case Instruction::Jump: {
-            Out << "jmp ";
+            Out << "jmp label ";
             auto *Jump = cast<JumpInst>(I);
             WriteBasicBlockOperandInternal(Out, Jump->getDestBasicBlock(), Tracker, isForDebug);
             break;
