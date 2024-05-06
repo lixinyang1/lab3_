@@ -723,6 +723,7 @@ public:
     Function::iterator insert(Function::iterator Position, BasicBlock *BB);
     
     std::string_view getName() const { return Name; }
+    bool hasName() const;
     Module *getParent() const { return Parent; }
     /// Returns the FunctionType.
     FunctionType *getFunctionType() const {
@@ -793,6 +794,7 @@ public:
     bool hasExternalLinkage() const { return ExternalLinkage; }
     Module *getParent() const { return Parent; }
     std::string_view getName() const { return Name; }
+    bool hasName() const;
 
 };
 

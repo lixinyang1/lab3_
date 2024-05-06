@@ -540,7 +540,8 @@ Function::Function(FunctionType *FTy, bool ExternalLinkage,
 
     if (M) {
         M->getFunctionList().push_back(this);
-        M->SymbolFunctionMap[getName()] = this;
+        if (hasName())
+            M->SymbolFunctionMap[getName()] = this;
     }
 }
 
@@ -569,6 +570,10 @@ Function::iterator Function::insert(Function::iterator Position, BasicBlock *BB)
     return FIT;
 }
 
+bool Function::hasName() const {
+    return !Name.empty();
+}
+
 GlobalVariable::GlobalVariable(Type *EleTy, std::size_t NumElements, bool ExternalLinkage,
                                std::string_view Name, Module *M)
     : Value(PointerType::get(EleTy), Value::GlobalVariableVal),
@@ -577,11 +582,16 @@ GlobalVariable::GlobalVariable(Type *EleTy, std::size_t NumElements, bool Extern
     assert(!EleTy->isUnitTy() && "Cannot create global variable of () type!");
     if (M) {
         M->getGlobalList().push_back(this);
-        M->SymbolGlobalMap[getName()] = this;
+        if (hasName())
+            M->SymbolGlobalMap[getName()] = this;
     }
 }
 
 GlobalVariable *GlobalVariable::Create(Type *EleTy, std::size_t NumElements, bool ExternalLinkage,
                                         std::string_view Name, Module *M) {
     return new GlobalVariable(EleTy, NumElements, ExternalLinkage, Name, M);
+}
+
+bool GlobalVariable::hasName() const {
+    return !Name.empty();
 }
