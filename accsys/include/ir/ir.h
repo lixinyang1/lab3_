@@ -138,6 +138,7 @@ public:
     Type *getType() const { return Ty; }
     void setName(std::string_view);
     bool hasName() const;
+    std::string_view getName() const { return Name; }
 
 
     enum ValueKind {
@@ -462,9 +463,15 @@ public:
     Type *getElementType() const { return ElementTy; }
     Value *getPointerOperand() const { return getOperand(0); }
     Type *getPointerOperandType() const { return getPointerOperand()->getType(); }
-
+    // Get index
+    Value *getIndexOperand(unsigned index) const { return getOperand(index + 1); }
+    // Iterations of bounds.
     std::vector<std::optional<std::size_t>> &bounds() { return Bounds; }
     const std::vector<std::optional<std::size_t>> &bounds() const { return Bounds; }
+    std::optional<std::size_t> getBound(unsigned index) const {
+        assert(index < Bounds.size() && "getBound() out of range!");
+        return Bounds[index];
+    }
 
 	/// Accumulate the constant address offset by unit of element type if possible.
     /// This routine accepts an size_t into which it will try to accumulate the constant offset.
@@ -496,6 +503,7 @@ public:
                             BasicBlock *InsertAtEnd);
 
     Function *getCallee() const { return Callee; }
+    Value *getArgOperand(unsigned index) const { return getOperand(index); }
 
     static bool classof(const Instruction *I) {
         return I->getOpcode() == Instruction::Call;
@@ -632,6 +640,7 @@ public:
     Function *getParent() const { return Parent; }
     bool hasName() const;
     void setName(std::string_view Name);
+    std::string_view getName() const { return Name; }
     
     /// Returns the terminator instruction if the block is well formed or null
     /// if the block is not well formed.
@@ -647,13 +656,13 @@ public:
     }
     // container standard interface
     iterator begin() { return InstList.begin(); }
-    const_iterator cbegin() const { return InstList.cbegin(); }
+    const_iterator begin() const { return InstList.cbegin(); }
     iterator end() { return InstList.end(); }
-    const_iterator cend() const { return InstList.cend(); }
+    const_iterator end() const { return InstList.cend(); }
     reverse_iterator rbegin() { return InstList.rbegin(); }
-    const_reverse_iterator crbegin() const { return InstList.crbegin(); }
+    const_reverse_iterator rbegin() const { return InstList.crbegin(); }
     reverse_iterator rend() { return InstList.rend(); }
-    const_reverse_iterator crend() const { return InstList.crend(); }
+    const_reverse_iterator rend() const { return InstList.crend(); }
     [[nodiscard]] std::size_t size() const { return InstList.size(); }
     [[nodiscard]] bool empty() const { return InstList.empty(); }
     [[nodiscard]] const Instruction &front() const { return InstList.front(); }
@@ -741,13 +750,13 @@ public:
 
     // Basic block iteration.
     iterator begin() { return BasicBlockList.begin(); }
-    const_iterator cbegin() const { return BasicBlockList.cbegin(); }
+    const_iterator begin() const { return BasicBlockList.cbegin(); }
     iterator end() { return BasicBlockList.end(); }
-    const_iterator cend() const { return BasicBlockList.cend(); }
+    const_iterator end() const { return BasicBlockList.cend(); }
     reverse_iterator rbegin() { return BasicBlockList.rbegin(); }
-    const_reverse_iterator crbegin() const { return BasicBlockList.crbegin(); }
+    const_reverse_iterator rbegin() const { return BasicBlockList.crbegin(); }
     reverse_iterator rend() { return BasicBlockList.rend(); }
-    const_reverse_iterator crend() const { return BasicBlockList.crend(); }
+    const_reverse_iterator rend() const { return BasicBlockList.crend(); }
     // Basic blocks container method.
     [[nodiscard]] std::size_t size() const { return BasicBlockList.size(); }
     [[nodiscard]] bool empty() const { return BasicBlockList.empty(); }
@@ -758,9 +767,9 @@ public:
 
     // Argument iteration.
     arg_iterator arg_begin() { return Arguments; }
-    const_arg_iterator arg_cbegin() const { return Arguments; }
+    const_arg_iterator arg_begin() const { return Arguments; }
     arg_iterator arg_end() { return Arguments + NumArgs; }
-    const_arg_iterator arg_cend() const { return Arguments + NumArgs; }
+    const_arg_iterator arg_end() const { return Arguments + NumArgs; }
     Argument *getArg(unsigned index) const {
         assert (index < NumArgs && "getArg() out of range!");
         return Arguments + index;
@@ -796,6 +805,10 @@ public:
     std::string_view getName() const { return Name; }
     bool hasName() const;
 
+
+    static bool classof(const Value *V) {
+        return V->getValueID() == Value::GlobalVariableVal;
+    }
 };
 
 class Module {
@@ -818,27 +831,27 @@ private:
     std::unordered_map<std::string_view, Function *> SymbolFunctionMap;
     std::unordered_map<std::string_view, GlobalVariable *> SymbolGlobalMap;
 
-    // Private functions and global variables accessors.
-    FunctionListType &getFunctionList() { return FunctionList; }
-    const FunctionListType &getFunctionList() const { return FunctionList; }
-    GlobalListType &getGlobalList() { return GlobalVariableList; }
-    const GlobalListType &getGlobalList() const { return GlobalVariableList; }
-
     friend class Function;
     friend class GlobalVariable;
 public:
+    /// Implementation of IR dump to a output stream.
+    /// if isForDebug is set, the IR writer will print verbose type annotations.
+    void print(std::ostream &OS, bool isForDebug) const;
     /// Function accessor.
     /// Look up the specified function in the module symbol table.
     Function *getFunction(std::string_view Name) const;
     // Function iteration.
     iterator begin() { return FunctionList.begin(); }
-    const_iterator cbegin() const { return FunctionList.cbegin(); }
+    const_iterator begin() const { return FunctionList.cbegin(); }
     iterator end() { return FunctionList.end(); }
-    const_iterator cend() const { return FunctionList.cend(); }
+    const_iterator end() const { return FunctionList.cend(); }
     reverse_iterator rbegin() { return FunctionList.rbegin(); }
-    const_reverse_iterator crbegin() const { return FunctionList.crbegin(); }
+    const_reverse_iterator rbegin() const { return FunctionList.crbegin(); }
     reverse_iterator rend() { return FunctionList.rend(); }
-    const_reverse_iterator crend() const { return FunctionList.crend(); }
+    const_reverse_iterator rend() const { return FunctionList.crend(); }
+    // Private functions and global variables accessors.
+    FunctionListType &getFunctionList() { return FunctionList; }
+    const FunctionListType &getFunctionList() const { return FunctionList; }
 
     [[nodiscard]] std::size_t size() const { return FunctionList.size(); }
     [[nodiscard]] bool empty() const { return FunctionList.empty(); }
@@ -848,9 +861,11 @@ public:
     GlobalVariable *getGlobalVariable(std::string_view Name) const;
     // Global iteration.
     global_iterator global_begin() { return GlobalVariableList.begin(); }
-    const_global_iterator global_cbegin() const { return GlobalVariableList.cbegin(); }
+    const_global_iterator global_begin() const { return GlobalVariableList.cbegin(); }
     global_iterator global_end() { return GlobalVariableList.end(); }
-    const_global_iterator global_cend() const { return GlobalVariableList.cend(); }
+    const_global_iterator global_end() const { return GlobalVariableList.cend(); }
+    GlobalListType &getGlobalList() { return GlobalVariableList; }
+    const GlobalListType &getGlobalList() const { return GlobalVariableList; }
 
     [[nodiscard]] std::size_t global_size() const { return GlobalVariableList.size(); }
     [[nodiscard]] bool global_empty() const { return GlobalVariableList.empty(); }

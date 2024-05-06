@@ -3,6 +3,8 @@
 
 #include "gtest/gtest.h"
 
+#include <memory>
+#include <iostream>
 
 TEST(FunctionTest, ArgumentTest) {
     // Test the argument
@@ -39,8 +41,9 @@ TEST(FunctionTest, FactorialTest) {
     // Test the factorial function
     Type *IntegerType = Type::getIntegerTy();
     Type *UnitType = Type::getUnitTy();
+    auto M = std::make_unique<Module>();
     FunctionType *FT = FunctionType::get(IntegerType, {IntegerType});
-    Function *F = Function::Create(FT);
+    Function *F = Function::Create(FT, false, "factorial", M.get());
     BasicBlock *Entry = BasicBlock::Create(F);
     BasicBlock *True = BasicBlock::Create(F);
     BasicBlock *False = BasicBlock::Create(F);
@@ -111,9 +114,10 @@ TEST(FunctionTest, FactorialTest) {
     ASSERT_EQ(NAddr->getNumUses(), 4);
     ASSERT_EQ(RetAddr->getNumUses(), 3);
     ASSERT_EQ(AnsAddr->getNumUses(), 2);
+    // Try printing the function.
+    // M->print(std::cout, false);
     // Manually delete the Function.
     // In the real use case, the instruction will be managed by a InstList in a Module.
-    delete F;
     delete One;
     delete Zero;
 }
