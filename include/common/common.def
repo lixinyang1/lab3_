@@ -9,6 +9,15 @@
 TreeNodeDefine(ND_UnaryExpr)
 TreeNodeDefine(ND_BinaryExpr)
 TreeNodeDefine(ND_IntegerLiteral)
+TreeNodeDefine(ND_AssignExpr)
+TreeNodeDefine(ND_IfElseExpr)
+TreeNodeDefine(ND_LoopExpr)
+TreeNodeDefine(ND_ReturnExpr)
+TreeNodeDefine(ND_FuncExpr)
+TreeNodeDefine(ND_ValExpr)
+TreeNodeDefine(ND_Root)
+TreeNodeDefine(ND_VarDecl)
+TreeNodeDefine(ND_FuncDef)
 
 // Binary Opcode
 OpcodeDefine(OP_Add,    "add")

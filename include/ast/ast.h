@@ -5,8 +5,10 @@
 #include <vector>
 #include <map>
 
+using namespace std;
+
 enum Type {
-    INT, VOID, 
+    INT, VOID, ALL,
     FAIL    // to show that Table.lookup didn't find var or func,
             // or type doesn't match
 };
@@ -67,36 +69,36 @@ struct TreeExpr : public Node {
     TreeExpr(NodeType type) : Node(type) {}
 };
 
-
-struct TreeNumber : public TreeExpr {
-    constexpr static NodeType this_type = ND_Number;
-    int64_t value;
-    TreeNumber(int64_t value) : TreeExpr(this_type), value(value) {}
-};
-
-
 // Stmt node
 struct TreeAssignStmt : public TreeExpr {
     // TODO: complete your code here;
+    constexpr static NodeType this_type = ND_AssignExpr;
     ExprPtr lhs, rhs;
+    TreeAssignStmt(ExprPtr lhs,ExprPtr rhs):TreeExpr(ND_AssignExpr),lhs(lhs),rhs(rhs){}
 };
 
 
 struct TreeIfStmt : public TreeExpr {
     // TODO: complete your code here;
+    constexpr static NodeType this_type = ND_IfElseExpr;
     ExprPtr conditionExp, trueStmtNode, elseStmtNode;
+    TreeIfStmt(ExprPtr a,ExprPtr b,ExprPtr c):TreeExpr(ND_IfElseExpr),conditionExp(a),trueStmtNode(b),elseStmtNode(c){}
 };
 
 
 struct TreeWhileStmt : public TreeExpr {
     // TODO: complete your code here;
+    constexpr static NodeType this_type = ND_LoopExpr;
     ExprPtr conditionExp, trueStmtNode;
+    TreeWhileStmt(ExprPtr a,ExprPtr b):TreeExpr(ND_LoopExpr),conditionExp(a),trueStmtNode(b){}
 };
 
 
 struct TreeReturnStmt : public TreeExpr {
     // TODO: complete your code here;
+    constexpr static NodeType this_type = ND_ReturnExpr;
     ExprPtr returnExp;
+    TreeReturnStmt(ExprPtr returnExp):TreeExpr(ND_ReturnExpr),returnExp(returnExp){}
 };
 
 
@@ -121,19 +123,29 @@ struct TreeBinaryExpr : public TreeExpr {
 
 struct TreeFuncExpr : public TreeExpr {
     // TODO: complete your code here;
+    constexpr static NodeType this_type = ND_FuncExpr;
     std::string name;
     std::map<std::string, varType> input_params;
+    void append(string x,varType y){
+        input_params[x]=y;
+    }
+    TreeFuncExpr(std::string name,std::map<std::string, varType> input_params):TreeExpr(this_type),name(name),input_params(input_params){}
 };
 
 
 struct TreeVarExpr : public TreeExpr {
     // TODO: complete your code here;
+    constexpr static NodeType this_type = ND_ValExpr;
     std::string name;
     std::vector<int> index; // eg. a[1][2] means pushing 1 and 2 to vector
+    void append(int x){
+        index.push_back(x);
+    }
+    TreeVarExpr(std::string name,std::vector<int>index):TreeExpr(this_type),name(name),index(index){}
 };
 
 struct TreeNumber : public TreeExpr {
-    constexpr static NodeType this_type = ND_Number;
+    constexpr static NodeType this_type = ND_IntegerLiteral;
     int64_t value;
     TreeNumber(int64_t value) : TreeExpr(this_type), value(value) {}
 };
@@ -142,27 +154,46 @@ struct TreeNumber : public TreeExpr {
 // other node
 struct TreeRoot : public TreeExpr {
     // TODO: complete your code here;
+    constexpr static NodeType this_type = ND_Root;
     std::vector<ExprPtr> rootItems;
+    void append(ExprPtr x){
+        rootItems.push_back(x);
+    }
+    TreeRoot(std::vector<ExprPtr>rootItems):TreeExpr(this_type),rootItems(rootItems){}
 };
 
 struct TreeVarDecl : public TreeExpr {
     // TODO: complete your code here;
-    std::vector<std::string> varNames;
-    std::vector<varType> types;
+    varType type;
     std::vector<ExprPtr> assignStmtNodes;
+    constexpr static NodeType this_type = ND_VarDecl;
+    TreeVarDecl(std::vector<std::string> varNames,std::vector<varType> types,std::vector<ExprPtr> assignStmtNodes):TreeExpr(this_type),varNames(varNames),types(types),assignStmtNodes(assignStmtNodes){}
+    void append(ExprPtr x){
+        assignStmtNodes.push_back(x);
+    }
 };
 
 struct TreeBlock : public TreeExpr {
     // TODO: complete your code here;
+    constexpr static NodeType this_type = ND_VarDecl;
     std::vector<ExprPtr> blockItems;
+    TreeBlock(std::vector<ExprPtr>blockItems):TreeExpr(this_type),blockItems(blockItems){}
+    void append(ExprPtr x){
+        blockItems.push_back(x);
+    }
 };
 
 struct TreeFuncDef : public TreeExpr {
     // TODO: complete your code here;
+    constexpr static NodeType this_type = ND_FuncDef;
     std::string funcName;
     std::vector<std::string> varNames;
     FuncType type;
     ExprPtr blockNode;
+    TreeFuncDef(std::string funcName,std::vector<std::string>,FuncType type,ExprPtr blockNode):TreeExpr(this_type),funcName(funcName),varNames(varNames),type(type),blockNode(blockNode){}
+    void append(string x){
+        varNames.push_back(x);
+    }
 };
 
 

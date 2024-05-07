@@ -31,7 +31,9 @@ lab2的基本框架就是`sa.cpp` / `sa.h`，只不过我还没在main里面调�
 
 * 对于int a, b = 1, c 这种连续的Decl，请依次存入他们的name, type, 和assignStmtNode
   * 有赋值的assignStmtNode可以在类似`VarDef : Ident Assign InitVal`的时候创建一个TreeAssignStmt节点
-  * 没赋值的可以考虑在类似`VarDef : Ident {"[" INT_CONST "]"} `的时候创建一个TreeVarExpStmt节点，或者你自己在继承一个没有任何用的临时节点类型，反正我后面lab2我可以区分
+  * 没赋值的可以考虑在类似`VarDef : Ident {"[" INT_CONST "]"} `的时候创建一个TreeVarExpStmt节点，或者你自己在继承一个没有
+    update:int a,b=1,c这种一律视为赋值，如int a视为a=$其中$的type类型为ALL
+  任何用的临时节点类型，反正我后面lab2我可以区分
   * 将这些节点依次推入assignStmtNodes
 * 其他问题遇到了再说吧，一时半会儿想不出来
 
