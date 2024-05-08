@@ -129,7 +129,7 @@ struct TreeFuncExpr : public TreeExpr {
     void append(string x,varType y){
         input_params[x]=y;
     }
-    TreeFuncExpr(std::string name,std::map<std::string, varType> input_params):TreeExpr(this_type),name(name),input_params(input_params){}
+    TreeFuncExpr(std::string name,map<std::string, varType> input_params):TreeExpr(this_type),name(name),input_params(input_params){}
 };
 
 
