@@ -93,10 +93,10 @@ public:
     /// Inner Use list operation, should be only be called by Use.
     void addUse(Use &U) { U.addToList(&UserList); }
     void removeUse(Use &U) { U.removeFromList(); }
+
     /// Traverse all the user of this 'Value'.
     /// 'def-use' chain maintained by a double linked list and
     /// represented by Use as well.
-
     struct UserView {
         struct user_iterator {
             Use *U;
@@ -121,6 +121,7 @@ public:
         }
     };
 
+    /// Return the user view of this value.
     [[nodiscard]] UserView getUserView() const { return UserView {.UserList = UserList}; }
     /// Return the number of uses of this value.
     /// Distinguish between Value's 'getNumUses' and Instructions's 'getNumOperands'.
@@ -135,12 +136,18 @@ private:
     Use *UserList = nullptr;
     std::string Name;
 public:
+    /// Return the type of the value.
     Type *getType() const { return Ty; }
+    /// Set the name of the value.
     void setName(std::string_view);
+    /// Check if the value has a name, such as %name.
+    /// By default, the name of a value is empty (annoymous value).
+    /// Annoymous value will be assigned a slot number in IR print, such as %1.
     bool hasName() const;
+    /// Return the name of the value.
     std::string_view getName() const { return Name; }
 
-
+    /// Enumeration of the subclass value kinds.
     enum ValueKind {
 #define ValueTypeDefine(subclass) subclass##Val,
 #include "ir.def"
@@ -178,6 +185,7 @@ public:
     static ConstantInt *Create(std::uint32_t Val);
 
 public:
+    /// Return the integer value of the constant.
     std::uint32_t getValue() const { return value; }
 
     static bool classof(const Value *V) {
@@ -229,12 +237,14 @@ private:
 
     void setParent(BasicBlock *BB);
 public:
-    // Insert an unlinked instruction into a basic block immediately before the specified instruction.
+    /// Insert an unlinked instruction into a basic block immediately before the specified instruction.
     void insertBefore(Instruction *InsertPos);
     void insertBefore(InstListType::iterator InsertPos);
-    // Inserts an unlinked instruction into ParentBB at position It and returns the iterator of the inserted instruction.
+    /// Inserts an unlinked instruction into ParentBB at position It and returns the iterator of the inserted instruction.
     void insertBefore(BasicBlock &BB, InstListType::iterator IT);
+    /// Insert an unlinked instruction into a basic block immediately after the specified instruction.
     void insertAfter(Instruction *InsertPos);
+    /// Inserts an unlinked instruction into ParentBB at position It and returns the iterator of the inserted instruction.
     InstListType::iterator insertInto(BasicBlock *ParentBB, InstListType::iterator IT);
 
  	// This method unlinks 'this' from the containing basic block, but does not delete it.
@@ -247,13 +257,14 @@ public:
     /// Return the integer reptresentation of the instruction opcode enumeration,
     /// which can be 'BinaryOps', 'MemoryOps', 'TerminatorOps' or 'OtherOps'.
     unsigned getOpcode() const { return getValueID() - InstructionVal; }
-    /// Get the operands (use information) of Instruction, represented by
+    /// Return the operands (use information) of Instruction, represented by
     /// a 'Use' class.
     const Use *getOperandList() const { return Uses; }
     Use *getOperandList() { return Uses; }
-    Value *getOperand(unsigned index) const {
-        assert(index < getNumOperands() && "getOperand() out of range!");
-        return getOperandList()[index];
+    /// Return the i-th operand of the instruction.
+    Value *getOperand(unsigned i) const {
+        assert(i < getNumOperands() && "getOperand() out of range!");
+        return getOperandList()[i];
     }
     const Use &getOperandUse(unsigned index) const {
         return getOperandList()[index];
@@ -261,6 +272,7 @@ public:
     Use &getOperandUse(unsigned index) {
         return getOperandList()[index];
     }
+    /// Return the number of operands of the instruction.
     unsigned getNumOperands() const { return NumUserOperands; }
     /// Operands iteration.
     op_iterator op_begin() { return getOperandList(); }
@@ -272,8 +284,9 @@ public:
         return getOperandList() + NumUserOperands;
     }
 
-
+    /// Check if the instruction has a binary opcode.
     bool isBinaryOp() const { return isBinaryOp(getOpcode()); }
+    /// Check if the instruction has a terminator opcode.
     bool isTerminator() const { return isTerminator(getOpcode()); }
 
     static inline bool isBinaryOp(unsigned Opcode) {
@@ -363,8 +376,9 @@ public:
                               Instruction *InsertBefore = nullptr);
     static AllocaInst *Create(Type *PointeeTy, std::size_t NumElements,
                               BasicBlock *InsertAtEnd);
-
+    /// Return the type of the allocated elements.
     Type *getAllocatedType() const { return AllocatedType; }
+    /// Return the number of elements allocated.
     std::size_t getNumElements() const { return NumElements; }
 
 
@@ -387,10 +401,10 @@ public:
     static StoreInst *Create(Value *Val, Value *Ptr,
                              BasicBlock *InsertAtEnd);
 public:
-    // stored value.
+    // The stored value operand of the store instruction.
     Value *getValueOperand() const { return getOperand(0); }
     Type *getValueOperandType() const { return getValueOperand()->getType(); }
-    // stored destination pointer type value.
+    // The pointer operand of the store instruction.
     Value *getPointerOperand() const { return getOperand(1); }
     Type *getPointerOperandType() const { return getPointerOperand()->getType(); }
 
@@ -411,7 +425,7 @@ protected:
 public:
     static LoadInst *Create(Value *Ptr, Instruction *InsertBefore = nullptr);
     static LoadInst *Create(Value *Ptr, BasicBlock *InsertAtEnd);
-
+    // The pointer operand of the load instruction.
     Value *getPointerOperand() const { return getOperand(0); }
     Type *getPointerOperandType() const { return getPointerOperand()->getType(); }
 
@@ -460,11 +474,13 @@ public:
 
 
 public:
+    /// Return the element type of the offset instruction.
     Type *getElementType() const { return ElementTy; }
+    // The base pointer operand of the offset instruction.
     Value *getPointerOperand() const { return getOperand(0); }
     Type *getPointerOperandType() const { return getPointerOperand()->getType(); }
-    // Get index
-    Value *getIndexOperand(unsigned index) const { return getOperand(index + 1); }
+    /// Return the i-th index operand.
+    Value *getIndexOperand(unsigned i) const { return getOperand(i + 1); }
     // Iterations of bounds.
     std::vector<std::optional<std::size_t>> &bounds() { return Bounds; }
     const std::vector<std::optional<std::size_t>> &bounds() const { return Bounds; }
@@ -501,9 +517,10 @@ public:
                             Instruction *InsertBefore = nullptr);
     static CallInst *Create(Function *Callee, const std::vector<Value *> &Args, 
                             BasicBlock *InsertAtEnd);
-
+    /// Return the callee function of the call instruction.
     Function *getCallee() const { return Callee; }
-    Value *getArgOperand(unsigned index) const { return getOperand(index); }
+    /// Return the i-th argument passed to the callee function.
+    Value *getArgOperand(unsigned i) const { return getOperand(i); }
 
     static bool classof(const Instruction *I) {
         return I->getOpcode() == Instruction::Call;
@@ -522,7 +539,7 @@ protected:
 public:
     static RetInst *Create(Value *RetVal, Instruction *InsertBefore = nullptr);
     static RetInst *Create(Value *RetVal, BasicBlock *InsertAtEnd);
-
+    /// Return the return value of the return instruction.
     Value *getReturnValue() const { return getOperand(0); }
 
     static bool classof(const Instruction *I) {
@@ -544,7 +561,7 @@ private:
 public:
     static JumpInst *Create(BasicBlock *Dest, Instruction *InsertBefore = nullptr);
     static JumpInst *Create(BasicBlock *Dest, BasicBlock *InsertAtEnd);
-
+    /// Return the destination basic block of the jump instruction.
     BasicBlock *getDestBasicBlock() const { return Dest; }
 
     static bool classof(const Instruction *I) {
@@ -573,9 +590,11 @@ public:
     static BranchInst *Create(BasicBlock *IfTrue, BasicBlock *IfFalse, 
                               Value *Cond, 
                               BasicBlock *InsertAtEnd);
-
+    /// Return the condition value of the branch instruction.
     Value *getCondition() const { return getOperand(0); }
+    /// Return the true branch basic block of the branch instruction.
     BasicBlock *getTrueBB() const { return IfTrue; }
+    /// Return the false branch basic block of the branch instruction.
     BasicBlock *getFalseBB() const { return IfFalse; }
 
     static bool classof(const Instruction *I) {
@@ -634,6 +653,7 @@ private:
     BasicBlock(Function *Parent, BasicBlock *InsertBefore);
 public:
     static BasicBlock *Create(Function *Parent = nullptr, BasicBlock *InsertBefore = nullptr);
+    /// Insert an unlinked basic block into a function immediately before the specified basic block.
     void insertInto(Function *Parent, BasicBlock *InsertBefore = nullptr);
 
     void setParent(Function *F);
@@ -675,7 +695,9 @@ public:
 class Argument: public Value,
                 public ListNode<Argument> {
 protected:
-    Argument(Type *Ty, Function *Parent = nullptr, unsigned ArgNo = 0);
+    // You should not create an Argument value direcly.
+    // The Function class will initialize its Argument values.
+    explicit Argument(Type *Ty, Function *Parent = nullptr, unsigned ArgNo = 0);
 private:
     Function *Parent;
     unsigned ArgNo;
@@ -684,6 +706,7 @@ private:
 public:
     const Function *getParent() const { return Parent; }
     Function *getParent() { return Parent; }
+    /// Return the argument index in its parent function.
     unsigned getArgNo() const { return ArgNo; }
 
     static bool classof(const Value *V) {
@@ -728,7 +751,7 @@ private:
 public:
     static Function *Create(FunctionType *FTy, bool ExternalLinkage = false,
                             std::string_view Name = "", Module *M = nullptr);
-    // Insert BB in the basic block list at Position.
+    /// Insert BB in the basic block list at Position.
     Function::iterator insert(Function::iterator Position, BasicBlock *BB);
     
     std::string_view getName() const { return Name; }
