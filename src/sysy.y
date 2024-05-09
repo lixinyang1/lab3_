@@ -6,14 +6,14 @@
 #include <stdarg.h>
 void yyerror(const char *s);
 extern int yylex(void);
-extern TreeNode* root;
+extern TreeExpr root;
 %}
 
 /// types
 %union {
     int ival;
     char* str;
-    TreeNode* expr;
+    TreeExpr expr;
     OpType op;
 }
 
@@ -26,7 +26,7 @@ extern TreeNode* root;
 
 %start CompUnit
 
-%type <expr> Decl VarDecl MoreVarDef VarDef Dimension InitVal FuncDef FuncFParams
+%type <expr> VarDecl MoreVarDef VarDef Dimension InitVal FuncDef FuncFParams
             FuncFParam DimParams MoreDimParams MoreFuncFParams Block BlockItems BlockItem Stmt
             ReturnExp Exp LVal ValIndex PrimaryExp UnaryExp FuncRParams MoreFuncRParams
             UnaryOp MulExp AddExp RelExp EqExp LAndExp LOrExp
@@ -46,66 +46,99 @@ extern TreeNode* root;
 
 %%
 
-CompUnit : CompUnit Decl    {
-                                root = $$ = newTreeNode(STR, "CompUnit", 0); 
-                                appendChild($$, $1);
-                                appendChild($$, $2);
+CompUnit : CompUnit VarDecl {
+                                $1->append($2);
+                                root = $$ = $1;
                             }
-        | CompUnit FuncDef  {
-                                root = $$ = newTreeNode(STR, "CompUnit", 0); 
-                                appendChild($$, $1);
-                                appendChild($$, $2);
+        | CompUnit FuncDef {
+                                $1->append($2);
+                                root = $$ = $1;
                             }
-        | FuncDef           {
-                                root = $$ = newTreeNode(STR, "CompUnit", 0); 
-                                appendChild($$, $1);
-                            }
-        | Decl              {
-                                root = $$ = newTreeNode(STR, "CompUnit", 0); 
-                                appendChild($$, $1);
-                            }
+        | VarDecl {
+                                root = $$ = new TreeRoot(std::vector<ExprPtr>{$1});
+        }
+        | FuncDef {
+                                root = $$ = new TreeRoot(std::vector<ExprPtr>{$1});
+        }
         ;
 
-Decl : VarDecl  {
-                    $$ = newTreeNode(STR, "Decl", 0);
-                    appendChild($$, $1);
-                }
-
-VarDecl : TyInt VarDef MoreVarDef Semicolon;
-MoreVarDef : Comma VarDef MoreVarDef
-        | 
+VarDecl : TyInt VarDef MoreVarDef Semicolon {
+                                $3.insert($3.begin(), $2);
+                                $$ = new TreeVarDecl(INT, $3);
+        };
+MoreVarDef : Comma VarDef MoreVarDef {
+                                $3.insert($3.begin(), $2);
+                                $$ = $3;
+}
+        | {
+                                $$ = std::vector<ExprPtr>{};
+        }
         ;
 
-VarDef : Ident Assign InitVal
-        | Ident Dimension 
+VarDef : Ident Assign InitVal {
+                                ExprPtr left = new TreeVarExpr($1, std::vector<int>{});
+                                $$ = new TreeAssignStmt(left, $3);
+}
+        | Ident Dimension {
+                                ExprPtr left = new TreeVarExpr($1,$2);
+                                $$ = new TreeAssignStmt(left, NULL);                       
+        }
         ;
         
-Dimension : LBracket Int RBracket Dimension
-        |
+Dimension : LBracket Int RBracket Dimension {
+                                $4.insert($4.begine(), $2); // reverse indexes
+                                $$ = $4;
+}
+        | {
+                                $$ = std::vector<int>{};
+        }
         ;
 
-InitVal : Exp;
+InitVal : Exp {
+                                $$ = $1;
+};
 
-FuncDef : TyInt Ident LParen FuncFParams RParen Block
-        | TyVoid Ident LParen FuncFParams RParen Block
+FuncDef : TyInt Ident LParen FuncFParams RParen Block {
+                                $$ = new TreeFuncDef($2, $3, INT, $5);
+}
+        | TyVoid Ident LParen FuncFParams RParen Block {
+                                $$ = new TreeFuncDef($2, $3, VOID, $5);
+        }
         ;
 
-FuncFParams : FuncFParam MoreFuncFParams
-        | 
+FuncFParams : FuncFParam MoreFuncFParams {
+                                $2.insert($1);
+                                $$ = $2;
+}
+        | {
+                                $$ = std::map<std::string, varType> {};
+        }
         ;
 
-FuncFParam : TyInt Ident DimParams;
+FuncFParam : TyInt Ident DimParams {
+                                $$ = std::make_pair($2, $1);
+};
 
-DimParams : LBracket RBracket MoreDimParams
-        |
+DimParams : LBracket RBracket MoreDimParams {
+}
+        | {
+                
+        }
         ;
 
-MoreDimParams : LBracket Int RBracket MoreDimParams
-        |
+MoreDimParams : LBracket Int RBracket MoreDimParams {
+                                $4.insert($4.begin(), $2);
+                                $$ = $4;
+}
+        | {
+                                $$ = std::vector<int>{};
+        }
         ;
 
-MoreFuncFParams : Comma FuncFParam MoreFuncFParams
-        |
+MoreFuncFParams : Comma FuncFParam MoreFuncFParams {
+}
+        | {
+        }
         ;
 
 Block : LBrace BlockItems RBrace;
@@ -114,7 +147,7 @@ BlockItems : BlockItem BlockItems
         | 
         ;
 
-BlockItem : Decl
+BlockItem : VarDecl
         | Stmt
         ;
 

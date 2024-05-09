@@ -4,16 +4,17 @@
 
 extern int yyparse();
 
-TreeNode *root;
+ExprPtr root;
 extern FILE *yyin;
-extern void print_expr(TreeNode *cur, int prefix);
+extern void print_expr(ExprPtr exp, std::string prefix, std::string ident);
 
 int main(int argc, char **argv)
 {
     yyin = fopen(argv[1], "r");
     fmt::print("Start parsing!\n");
+    root = new TreeRoot(std::vector<ExprPtr>{});
     int result = yyparse();
     fmt::print("Parse finish!\n");
-    print_expr(root, 0);
+    print_expr(root, 0, 0);
     return 0;
 }
