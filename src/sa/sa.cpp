@@ -47,6 +47,7 @@ int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable) {
                 for (int i = 0; i < funcDefNode->varNames.size(); i++)
                     varTable.add_one_entry(funcDefNode->varNames[i], funcDefNode->type.inputType[i]);
 
+                funcTable.set_func_name(funcDefNode->funcName);
                 // analysis block
                 if (sa(funcDefNode->blockNode, varTable, funcTable) != 0)
                     return -1;
@@ -256,8 +257,11 @@ varType type_check(TreeExpr * node, Table<varType> varTable, Table<FuncType> fun
     /* check if the return type is the same as the declared one. */
     if (auto *returnStmtNode = node->as<TreeReturnStmt *>()) {
         // TODO: complete your code here
-
-        return varType(FAIL, 0);
+        varType res=type_check(returnStmtNode->returnExp,varTable,funcTable);
+        if (res.type==FAIL) return varType(FAIL, 0);
+        FuncType typ=funcTable.lookup(funcTable.get_cur_func_name());
+        if (equal(res,typ.returnType)) return res;
+        return varType(FAIL,0);
     }
 
     // unary exp
@@ -270,7 +274,10 @@ varType type_check(TreeExpr * node, Table<varType> varTable, Table<FuncType> fun
     /* check the type of two operands. */
     if (auto *binaryExpNode = node->as<TreeBinaryExpr *>()) {
         // TODO: complete your code here
-
+        varType left=type_check(binaryExpNode->lhs,varTable,funcTable);
+        varType right=type_check(binaryExpNode->rhs,varTable,funcTable);
+        if (left.type==FAIL||right.type==FAIL) return varType(FAIL,0);
+        if (equal(left,right)) return left;
         return varType(FAIL, 0);
     }
 
@@ -278,15 +285,20 @@ varType type_check(TreeExpr * node, Table<varType> varTable, Table<FuncType> fun
     /* check the type of the input params and the declared ones. */
     if (auto *funcExpNode = node->as<TreeFuncExpr *>()) {
         // TODO: complete your code here
-
-        return varType(FAIL, 0);
+        std::map<std::string,varType>input_params=funcExpNode->input_params;
+        for (auto it=input_params.begin();it!=input_params.end();it++){
+            if (equal(varTable.lookup(it->first),it->second)) continue;
+            return varType(FAIL,0);
+        }
+        return funcTable.lookup(funcExpNode->name).returnType;
     }
 
     // var exp
     /* check the use of the var and the declared one. */
     if (auto *varExpNode = node->as<TreeVarExpr *>()) {
         // TODO: complete your code here
-
+        varType var=varTable.lookup(varExpNode->name);
+        if (var.dimension==varExpNode->index.size()) return var;
         return varType(FAIL, 0);
     }
 
