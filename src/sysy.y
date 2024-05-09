@@ -99,10 +99,10 @@ InitVal : Exp {
 };
 
 FuncDef : TyInt Ident LParen FuncFParams RParen Block {
-                                $$ = new TreeFuncDef($2, $3, INT, $5);
+                                $$ = new TreeFuncDef($2, $4, INT, $6);
 }
         | TyVoid Ident LParen FuncFParams RParen Block {
-                                $$ = new TreeFuncDef($2, $3, VOID, $5);
+                                $$ = new TreeFuncDef($2, $4, VOID, $6);
         }
         ;
 
@@ -116,116 +116,230 @@ FuncFParams : FuncFParam MoreFuncFParams {
         ;
 
 FuncFParam : TyInt Ident DimParams {
-                                $$ = std::make_pair($2, $1);
+                                varType v = varType(INT, $3);
+                                $$ = std::make_pair($2, v);
 };
 
 DimParams : LBracket RBracket MoreDimParams {
+                                $$ = $3 + 1;
 }
         | {
-                
+                                $$ = 0;
         }
         ;
 
 MoreDimParams : LBracket Int RBracket MoreDimParams {
-                                $4.insert($4.begin(), $2);
-                                $$ = $4;
+                                $$ = $4 + 1;
 }
         | {
-                                $$ = std::vector<int>{};
+                                $$ = 0;
         }
         ;
 
 MoreFuncFParams : Comma FuncFParam MoreFuncFParams {
+                                $3.insert($2);
+                                $$ = $3;
 }
         | {
+                                $$ = std::map<std::string, varType> {};
         }
         ;
 
-Block : LBrace BlockItems RBrace;
+Block : LBrace BlockItems RBrace {
+                                $$ = $2;
+};
 
-BlockItems : BlockItem BlockItems
-        | 
+BlockItems : BlockItem BlockItems {
+                                $2.insert($2.begin(), $1);
+                                $$ = $2;
+}
+        | {
+                                $$ = std::vector<ExprPtr>{};
+        }
         ;
 
-BlockItem : VarDecl
-        | Stmt
+BlockItem : VarDecl {
+                                $$ = $1;
+}
+        | Stmt {
+                                $$ = $1;
+        }
         ;
 
-Stmt : LVal Assign Exp Semicolon
-        | Exp Semicolon
-        | Block
-        | If LParen Exp RParen Stmt Else Stmt
-        | If LParen Exp RParen Stmt %prec LowerThanElse
-        | While LParen Exp RParen Stmt
-        | Break Semicolon
-        | Continue Semicolon
-        | Return ReturnExp Semicolon
+Stmt : LVal Assign Exp Semicolon {
+                                $$ = new TreeAssignStmt($1, $3);     
+}
+        | Exp Semicolon {
+                                $$ = $1;      
+        }
+        | Block {
+                                $$ = $1;
+        }
+        | If LParen Exp RParen Stmt Else Stmt {
+                                $$ = new TreeIfStmt($3, $5, $7);
+        }
+        | If LParen Exp RParen Stmt %prec LowerThanElse {
+                                $$ = new TreeIfStmt($3, $5, NULL);
+        }
+        | While LParen Exp RParen Stmt {
+                                $$ = new TreeWhileStmt($3, $5);
+        }
+        | Break Semicolon {
+                                $$ = new TreeWhileControlStmt("Break");
+        }
+        | Continue Semicolon {
+                                $$ = new TreeWhileControlStmt("Continue");
+        }
+        | Return ReturnExp Semicolon {
+                                $$ = new TreeReturnStmt($2);
+        }
         ;
 
-ReturnExp : Exp
-        |
+ReturnExp : Exp {
+                                $$ = $1;
+}
+        | {
+                                $$ = NULL;
+        }
         ;
 
-Exp : LOrExp;
+Exp : LOrExp{
+                                $$ = $1;
+};
 
-LVal : Ident ValIndex;
+LVal : Ident ValIndex {
+                                $$ = new TreeVarExpr($1, $2);
+};
 
-ValIndex : LBracket Exp RBracket ValIndex
-        | 
+ValIndex : LBracket Exp RBracket ValIndex {
+                                // EXP is what ???
+                                $$ = $4.insert($4.begin(), $2);
+}
+        | {
+                                $$ = std::vector<int> {};
+        }
         ;
 
-PrimaryExp : LParen Exp RParen
-        | LVal
-        | Int
+PrimaryExp : LParen Exp RParen {
+                                $$ = $2;
+}
+        | LVal {
+                                $$ = $1;
+        }
+        | Int {
+                                $$ = new TreeNumber($1);
+        }
         ;
 
-UnaryExp : PrimaryExp
-        | Ident LParen FuncRParams RParen
-        | UnaryOp UnaryExp
+UnaryExp : PrimaryExp {
+                                $$ = $1;
+}
+        | Ident LParen FuncRParams RParen {
+                                $$ = new TreeFuncExpr($1, $3);
+        }
+        | UnaryOp UnaryExp {
+                                $$ = new TreeUnaryExpr($1, $2);
+        }
         ;
 
-FuncRParams : Exp MoreFuncRParams
-        |
+FuncRParams : Exp MoreFuncRParams{
+                                $2.insert($2.begin(), $1);
+                                $$ = $2;
+}
+        | {
+                                // something went wrong!
+                                $$ = std::vector<std::string>{} ;
+        }
         ;
 
-MoreFuncRParams : Comma Exp MoreFuncRParams
-        |
+MoreFuncRParams : Comma Exp MoreFuncRParams {
+                                $3.insert($3.begin(), $2);
+                                $$ = $3;
+}
+        | {
+                                // something went wrong!
+                                $$ = std::vector<std::string>{} ;
+        }
         ;
 
-UnaryOp : Plus
-        | Minus
-        | Not
+UnaryOp : Plus {
+                                $$ = OP_Pos;
+}
+        | Minus{
+                                $$ = OP_Neg;
+        }
+        | Not {
+                                $$ = OP_Lnot;
+        }
         ;
 
 /// The following Exps depends on priority
-MulExp : UnaryExp
-        | MulExp Mul UnaryExp
-        | MulExp Div UnaryExp
-        | MulExp Mod UnaryExp
+MulExp : UnaryExp {
+                                $$ = $1;
+}
+        | MulExp Mul UnaryExp{
+                                $$ = new TreeBinaryExpr(OP_Mul, $1, $3);
+        }
+        | MulExp Div UnaryExp{
+                                $$ = new TreeBinaryExpr(OP_Div, $1, $3);
+        }
+        | MulExp Mod UnaryExp{
+                                $$ = new TreeBinaryExpr(OP_Mod, $1, $3);
+        }
         ;
 
-AddExp : MulExp
-        | AddExp Plus MulExp;
-        | AddExp Minus MulExp;
+AddExp : MulExp {
+                                $$ = $1;
+}
+        | AddExp Plus MulExp {
+                                $$ = new TreeBinaryExpr(OP_Add, $1, $3);
+        }
+        | AddExp Minus MulExp{
+                                $$ = new TreeBinaryExpr(OP_Sub, $1, $3);
+        }
         ;
 
-RelExp : AddExp
-        | RelExp Lt AddExp
-        | RelExp Gt AddExp
-        | RelExp Lte AddExp
-        | RelExp Gte AddExp
+RelExp : AddExp {
+                                $$ = $1;
+}
+        | RelExp Lt AddExp {
+                                $$ = new TreeBinaryExpr(OP_Lt, $1, $3);
+        }
+        | RelExp Gt AddExp {
+                                $$ = new TreeBinaryExpr(OP_Gt, $1, $3);
+        }
+        | RelExp Lte AddExp {
+                                $$ = new TreeBinaryExpr(OP_Le, $1, $3);
+        }
+        | RelExp Gte AddExp {
+                                $$ = new TreeBinaryExpr(OP_Ge, $1, $3);
+        }
 
-EqExp : RelExp 
-        | EqExp Eq RelExp
-        | EqExp Neq RelExp
+EqExp : RelExp {
+                                $$ = $1;
+}
+        | EqExp Eq RelExp {
+                                $$ = new TreeBinaryExpr(OP_Eq, $1, $3);
+        }
+        | EqExp Neq RelExp {
+                                $$ = new TreeBinaryExpr(OP_Ne, $1, $3);
+        }
         ;
 
-LAndExp : EqExp
-        | LAndExp And EqExp
+LAndExp : EqExp {
+                                $$ = $1;
+}
+        | LAndExp And EqExp {
+                                $$ = new TreeBinaryExpr(OP_Land, $1, $3);
+        }
         ;
 
-LOrExp : LAndExp
-        | LOrExp Or LAndExp
+LOrExp : LAndExp {
+                                $$ = $1;
+}
+        | LOrExp Or LAndExp {
+                                $$ = new TreeBinaryExpr(OP_Lor, $1, $3);
+        }
         ;
 
 

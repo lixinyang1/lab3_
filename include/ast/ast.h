@@ -107,6 +107,13 @@ struct TreeWhileStmt : public TreeExpr
     TreeWhileStmt(ExprPtr a, ExprPtr b) : TreeExpr(ND_LoopExpr), conditionExp(a), trueStmtNode(b) {}
 };
 
+struct TreeWhileControlStmt : public TreeExpr
+{
+    constexpr static NodeType this_type = ND_LoopControlExpr;
+    string controlType;
+    TreeWhileControlStmt(string controlType) : TreeExpr(ND_LoopControlExpr), controlType(controlType) {}
+};
+
 struct TreeReturnStmt : public TreeExpr
 {
     // TODO: complete your code here;
