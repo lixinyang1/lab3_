@@ -167,7 +167,7 @@ struct TreeVarDecl : public TreeExpr {
     varType type;
     std::vector<ExprPtr> assignStmtNodes;
     constexpr static NodeType this_type = ND_VarDecl;
-    TreeVarDecl(std::vector<std::string> varNames,std::vector<varType> types,std::vector<ExprPtr> assignStmtNodes):TreeExpr(this_type),varNames(varNames),types(types),assignStmtNodes(assignStmtNodes){}
+    TreeVarDecl(varType type,vector<ExprPtr>assignStmtNodes):TreeExpr(this_type),type(type),assignStmtNodes(assignStmtNodes){}
     void append(ExprPtr x){
         assignStmtNodes.push_back(x);
     }
