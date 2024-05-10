@@ -26,7 +26,7 @@ extern TreeExpr root;
 
 %start CompUnit
 
-%type <expr> VarDecl MoreVarDef VarDef Dimension InitVal FuncDef FuncFParams
+%type <expr> CompUnit VarDecl MoreVarDef VarDef Dimension InitVal FuncDef FuncFParams
             FuncFParam DimParams MoreDimParams MoreFuncFParams Block BlockItems BlockItem Stmt
             ReturnExp Exp LVal ValIndex PrimaryExp UnaryExp FuncRParams MoreFuncRParams
             UnaryOp MulExp AddExp RelExp EqExp LAndExp LOrExp

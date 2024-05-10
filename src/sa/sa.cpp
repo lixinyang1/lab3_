@@ -285,12 +285,14 @@ varType type_check(TreeExpr * node, Table<varType> varTable, Table<FuncType> fun
     /* check the type of the input params and the declared ones. */
     if (auto *funcExpNode = node->as<TreeFuncExpr *>()) {
         // TODO: complete your code here
-        std::map<std::string,varType>input_params=funcExpNode->input_params;
+        /*std::map<std::string,varType>input_params=funcExpNode->input_params;
         for (auto it=input_params.begin();it!=input_params.end();it++){
             if (equal(varTable.lookup(it->first),it->second)) continue;
             return varType(FAIL,0);
         }
-        return funcTable.lookup(funcExpNode->name).returnType;
+        return funcTable.lookup(funcExpNode->name).returnType;*/
+        //TODO
+        return varType(FAIL,0);
     }
 
     // var exp

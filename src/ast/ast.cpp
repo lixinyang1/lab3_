@@ -51,6 +51,8 @@ void print_expr(ExprPtr exp, std::string prefix, std::string ident) {
     }
     if (auto *it=exp->as<TreeFuncExpr*>()){
         fmt::print("Call "+it->name+"\n");
+        for (auto x:it->varNames)
+            print_expr(x,ident + "└─ ", ident + "   ");
     }
     if (auto *it=exp->as<TreeVarExpr*>()){
         fmt::print("ident "+it->name+"\n");
