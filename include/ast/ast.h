@@ -150,7 +150,7 @@ struct TreeFuncExpr : public TreeExpr
     // TODO: complete your code here;
     constexpr static NodeType this_type = ND_FuncExpr;
     std::string name;
-    std::vector<std::string> varNames;
+    std::vector<ExprPtr> varNames;
 
     void append(string x)
     {
@@ -176,6 +176,7 @@ struct TreeNumber : public TreeExpr
 {
     constexpr static NodeType this_type = ND_IntegerLiteral;
     int64_t value;
+    void inc() { value++; }
     TreeNumber(int64_t value) : TreeExpr(this_type), value(value) {}
 };
 
@@ -194,10 +195,10 @@ struct TreeRoot : public TreeExpr
 
 struct TreeVarDecl : public TreeExpr
 {
-    varType type;
+    Type type;
     std::vector<ExprPtr> assignStmtNodes;
     constexpr static NodeType this_type = ND_VarDecl;
-    TreeVarDecl(varType type, vector<ExprPtr> assignStmtNodes) : TreeExpr(this_type), type(type), assignStmtNodes(assignStmtNodes) {}
+    TreeVarDecl(Type type, vector<ExprPtr> assignStmtNodes) : TreeExpr(this_type), type(type), assignStmtNodes(assignStmtNodes) {}
     void append(ExprPtr x)
     {
         assignStmtNodes.push_back(x);

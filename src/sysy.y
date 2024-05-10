@@ -116,23 +116,25 @@ FuncFParams : FuncFParam MoreFuncFParams {
         ;
 
 FuncFParam : TyInt Ident DimParams {
-                                varType v = varType(INT, $3);
+                                varType v = varType(INT, $3->value);
                                 $$ = std::make_pair($2, v);
 };
 
 DimParams : LBracket RBracket MoreDimParams {
-                                $$ = $3 + 1;
+                                $3->inc();
+                                $$ = $3;
 }
         | {
-                                $$ = 0;
+                                $$ = new TreeNumber(0);
         }
         ;
 
 MoreDimParams : LBracket Int RBracket MoreDimParams {
-                                $$ = $4 + 1;
+                                $4->inc();
+                                $$ = $4;
 }
         | {
-                                $$ = 0;
+                                $$ = new TreeNumber(0);
         }
         ;
 
