@@ -54,7 +54,7 @@ public:
         // TODO: complete your code here
         int sz=tableVector.size();
         if (tableVector[sz-1].count(entry_name)) return tableVector[sz-1][entry_name];
-        else return FAIL;
+        else return null;
     }
 
 };

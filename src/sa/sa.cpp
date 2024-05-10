@@ -22,15 +22,17 @@ int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable) {
             // varDecl, may have several var. eg. int a = 1, b, c = 1;
             if (auto *varDeclNode = root->rootItems[i]->as<TreeVarDecl *>()) {
 
-                for (int i = 0; i < varDeclNode->varNames.size(); i++) {
+                for (int i = 0; i < varDeclNode->assignStmtNodes.size(); i++) {
+                    // 
+                    auto *assignStmtNode = varDeclNode->assignStmtNodes[i]->as<TreeAssignStmt *>();
+                    auto *varExpNode = assignStmtNode->lhs->as<TreeVarExpr *>();
                     // add new var to now table.
-                    if (varTable.add_one_entry(varDeclNode->varNames[i], varDeclNode->types[i]) != 0)
+                    if (varTable.add_one_entry(varExpNode->name, varType(varDeclNode->type, varExpNode->index.size())) != 0)
                         return -1;
 
                     // if the varDecl has assign expression, do type_check. eg. int a = 1;
-                    if (varDeclNode->assignStmtNodes[i]->is<TreeAssignStmt>())
-                        if (type_check(varDeclNode->assignStmtNodes[i], varTable, funcTable).type == 0)
-                            return -1;
+                    if (type_check(assignStmtNode, varTable, funcTable).type == 0)
+                        return -1;
                 }
 
                 continue;
@@ -44,8 +46,8 @@ int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable) {
                 if (funcTable.add_one_entry(funcDefNode->funcName, funcDefNode->type) != 0)
                     return -1;
 
-                for (int i = 0; i < funcDefNode->varNames.size(); i++)
-                    varTable.add_one_entry(funcDefNode->varNames[i], funcDefNode->type.inputType[i]);
+                for (auto inputParam : funcDefNode->input_params)
+                    varTable.add_one_entry(inputParam.first, inputParam.second);
 
                 funcTable.set_func_name(funcDefNode->funcName);
                 // analysis block
@@ -73,15 +75,17 @@ int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable) {
             // varDecl eg. int a = 1;
             if (auto *varDeclNode = blockNode->blockItems[i]->as<TreeVarDecl *>()) {
 
-                for (int i = 0; i < varDeclNode->varNames.size(); i++) {
+                for (int i = 0; i < varDeclNode->assignStmtNodes.size(); i++) {
+                    // 
+                    auto *assignStmtNode = varDeclNode->assignStmtNodes[i]->as<TreeAssignStmt *>();
+                    auto *varExpNode = assignStmtNode->lhs->as<TreeVarExpr *>();
                     // add new var to now table.
-                    if (varTable.add_one_entry(varDeclNode->varNames[i], varDeclNode->types[i]) != 0)
+                    if (varTable.add_one_entry(varExpNode->name, varType(varDeclNode->type, varExpNode->index.size())) != 0)
                         return -1;
 
                     // if the varDecl has assign expression, do type_check. eg. int a = 1;
-                    if (varDeclNode->assignStmtNodes[i]->is<TreeAssignStmt>())
-                        if (type_check(varDeclNode->assignStmtNodes[i], varTable, funcTable).type == 0)
-                            return -1;
+                    if (type_check(assignStmtNode, varTable, funcTable).type == 0)
+                        return -1;
                 }
 
                 continue;
@@ -285,12 +289,25 @@ varType type_check(TreeExpr * node, Table<varType> varTable, Table<FuncType> fun
     /* check the type of the input params and the declared ones. */
     if (auto *funcExpNode = node->as<TreeFuncExpr *>()) {
         // TODO: complete your code here
-        std::map<std::string,varType>input_params=funcExpNode->input_params;
+        /*std::map<std::string,varType>input_params=funcExpNode->input_params;
         for (auto it=input_params.begin();it!=input_params.end();it++){
             if (equal(varTable.lookup(it->first),it->second)) continue;
             return varType(FAIL,0);
         }
-        return funcTable.lookup(funcExpNode->name).returnType;
+        return funcTable.lookup(funcExpNode->name).returnType;*/
+        //TODO
+        std::vector<ExprPtr> name_vec=funcExpNode->varNames;
+        string cur_func=funcTable.get_cur_func_name();
+        FuncType func=funcTable.lookup(cur_func);
+        std::vector<varType> input_parm=func.inputType;
+        int cur=0;
+        for (auto expr:name_vec){
+            varType x=type_check(expr,varTable,funcTable);
+            if (equal(x,input_parm[cur])) cur++;
+            return varType(FAIL,0);
+        }
+        if (cur!=input_parm.size()) return varType(FAIL,0);
+        return func.returnType;
     }
 
     // var exp

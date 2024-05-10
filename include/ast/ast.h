@@ -27,6 +27,7 @@ struct varType
     int dimension;
 
     varType(Type type, int d) : type(type), dimension(d) {}
+    varType(){}
 };
 
 struct FuncType
@@ -152,11 +153,11 @@ struct TreeFuncExpr : public TreeExpr
     std::string name;
     std::vector<ExprPtr> varNames;
 
-    void append(string x)
+    void append(ExprPtr x)
     {
         varNames.push_back(x);
     }
-    TreeFuncExpr(std::string name, map<std::string, varType> input_params) : TreeExpr(this_type), name(name), varNames(varNames) {}
+    TreeFuncExpr(string name,vector<ExprPtr>varNames) : TreeExpr(this_type), name(name), varNames(varNames) {}
 };
 
 struct TreeVarExpr : public TreeExpr
