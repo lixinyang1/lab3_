@@ -4,7 +4,7 @@
 
 extern int yyparse();
 
-ExprPtr root;
+TreeRoot *root;
 extern FILE *yyin;
 extern void print_expr(ExprPtr exp, std::string prefix, std::string ident);
 

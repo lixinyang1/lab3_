@@ -6,15 +6,19 @@
 #include <stdarg.h>
 void yyerror(const char *s);
 extern int yylex(void);
-extern TreeExpr root;
+extern TreeRoot* root;
 %}
 
 /// types
 %union {
     int ival;
-    char* str;
-    TreeExpr expr;
+    std::string str;
+    ExprPtr expr;
     OpType op;
+    std::vector<ExprPtr> vec1;
+    std::vector< std::pair< std::string, varType> > vec2;
+    std::pair<std::string, varType> pr;
+    TreeRoot* rt;
 }
 
 %token <ival> Int
@@ -26,10 +30,16 @@ extern TreeExpr root;
 
 %start CompUnit
 
-%type <expr> CompUnit VarDecl MoreVarDef VarDef Dimension InitVal FuncDef FuncFParams
-            FuncFParam DimParams MoreDimParams MoreFuncFParams Block BlockItems BlockItem Stmt
-            ReturnExp Exp LVal ValIndex PrimaryExp UnaryExp FuncRParams MoreFuncRParams
-            UnaryOp MulExp AddExp RelExp EqExp LAndExp LOrExp
+%type <expr> VarDecl VarDef InitVal FuncDef 
+            BlockItem Stmt Block
+            ReturnExp Exp LVal PrimaryExp UnaryExp  
+            MulExp AddExp RelExp EqExp LAndExp LOrExp
+%type <op> UnaryOp 
+%type <vec1> FuncRParams MoreFuncRParams ValIndex BlockItems Dimension MoreVarDef
+%type <vec2> MoreFuncFParams FuncFParams
+%type <pr> FuncFParam
+%type <ival> DimParams MoreDimParams
+%type <rt> CompUnit
 
 /// priority
 %nonassoc LowerThanElse
@@ -47,18 +57,18 @@ extern TreeExpr root;
 %%
 
 CompUnit : CompUnit VarDecl {
-                                $1->append($2);
-                                root = $$ = $1;
+                                root->append($2);
                             }
         | CompUnit FuncDef {
-                                $1->append($2);
-                                root = $$ = $1;
+                                root->append($2);
                             }
         | VarDecl {
-                                root = $$ = new TreeRoot(std::vector<ExprPtr>{$1});
+                                root = new TreeRoot(std::vector<ExprPtr>{});
+                                root->append($1);
         }
         | FuncDef {
-                                root = $$ = new TreeRoot(std::vector<ExprPtr>{$1});
+                                root = new TreeRoot(std::vector<ExprPtr>{});
+                                root->append($1);
         }
         ;
 
@@ -76,7 +86,7 @@ MoreVarDef : Comma VarDef MoreVarDef {
         ;
 
 VarDef : Ident Assign InitVal {
-                                ExprPtr left = new TreeVarExpr($1, std::vector<int>{});
+                                ExprPtr left = new TreeVarExpr($1, std::vector<ExprPtr>{});
                                 $$ = new TreeAssignStmt(left, $3);
 }
         | Ident Dimension {
@@ -86,11 +96,12 @@ VarDef : Ident Assign InitVal {
         ;
         
 Dimension : LBracket Int RBracket Dimension {
-                                $4.insert($4.begine(), $2); // reverse indexes
+                                ExprPtr t = new TreeNumber($2);
+                                $4.insert($4.begin(), t); // reverse indexes
                                 $$ = $4;
 }
         | {
-                                $$ = std::vector<int>{};
+                                $$ = std::vector<ExprPtr>{};
         }
         ;
 
@@ -107,48 +118,48 @@ FuncDef : TyInt Ident LParen FuncFParams RParen Block {
         ;
 
 FuncFParams : FuncFParam MoreFuncFParams {
-                                $2.insert($1);
+                                $2.insert($2.begin(), $1);
                                 $$ = $2;
 }
         | {
-                                $$ = std::map<std::string, varType> {};
+                                $$ = std::vector< std::pair< std::string, varType> > {};
         }
         ;
 
 FuncFParam : TyInt Ident DimParams {
-                                varType v = varType(INT, $3->value);
+                                varType v = varType(INT, $3);
                                 $$ = std::make_pair($2, v);
 };
 
 DimParams : LBracket RBracket MoreDimParams {
-                                $3->inc();
+                                $3 = $3 + 1;
                                 $$ = $3;
 }
         | {
-                                $$ = new TreeNumber(0);
+                                $$ = 0;
         }
         ;
 
 MoreDimParams : LBracket Int RBracket MoreDimParams {
-                                $4->inc();
+                                $4 = $4 + 1;
                                 $$ = $4;
 }
         | {
-                                $$ = new TreeNumber(0);
+                                $$ = 0;
         }
         ;
 
 MoreFuncFParams : Comma FuncFParam MoreFuncFParams {
-                                $3.insert($2);
+                                $3.insert($3.begin(), $2);
                                 $$ = $3;
 }
         | {
-                                $$ = std::map<std::string, varType> {};
+                                $$ = std::vector< std::pair< std::string, varType> > {};
         }
         ;
 
 Block : LBrace BlockItems RBrace {
-                                $$ = $2;
+                                $$ = new TreeBlock($2);
 };
 
 BlockItems : BlockItem BlockItems {
@@ -214,11 +225,11 @@ LVal : Ident ValIndex {
 };
 
 ValIndex : LBracket Exp RBracket ValIndex {
-                                // EXP is what ???
-                                $$ = $4.insert($4.begin(), $2);
+                                $4.insert($4.begin(), $2);
+                                $$ = $4;
 }
         | {
-                                $$ = std::vector<int> {};
+                                $$ = std::vector<ExprPtr> {};
         }
         ;
 
@@ -249,8 +260,7 @@ FuncRParams : Exp MoreFuncRParams{
                                 $$ = $2;
 }
         | {
-                                // something went wrong!
-                                $$ = std::vector<std::string>{} ;
+                                $$ = std::vector<ExprPtr>{} ;
         }
         ;
 
@@ -259,8 +269,7 @@ MoreFuncRParams : Comma Exp MoreFuncRParams {
                                 $$ = $3;
 }
         | {
-                                // something went wrong!
-                                $$ = std::vector<std::string>{} ;
+                                $$ = std::vector<ExprPtr>{} ;
         }
         ;
 

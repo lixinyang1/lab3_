@@ -3,7 +3,6 @@
 #include <type_traits>
 #include <string>
 #include <vector>
-#include <map>
 
 using namespace std;
 
@@ -27,17 +26,17 @@ struct varType
     int dimension;
 
     varType(Type type, int d) : type(type), dimension(d) {}
-    varType(){}
+    varType() {}
 };
 
 struct FuncType
 {
-
     // input types
     std::vector<varType> inputType;
 
     // return type, here varType.type can be 'VOID'
-    varType returnType;
+    Type returnType;
+    FuncType(std::vector<varType> iT, Type rT) : inputType(iT), returnType(rT) {}
 };
 
 enum OpType
@@ -157,7 +156,7 @@ struct TreeFuncExpr : public TreeExpr
     {
         varNames.push_back(x);
     }
-    TreeFuncExpr(string name,vector<ExprPtr>varNames) : TreeExpr(this_type), name(name), varNames(varNames) {}
+    TreeFuncExpr(string name, vector<ExprPtr> varNames) : TreeExpr(this_type), name(name), varNames(varNames) {}
 };
 
 struct TreeVarExpr : public TreeExpr
@@ -165,12 +164,8 @@ struct TreeVarExpr : public TreeExpr
     // TODO: complete your code here;
     constexpr static NodeType this_type = ND_ValExpr;
     std::string name;
-    std::vector<int> index; // eg. a[1][2] means pushing 1 and 2 to vector
-    void append(int x)
-    {
-        index.push_back(x);
-    }
-    TreeVarExpr(std::string name, std::vector<int> index) : TreeExpr(this_type), name(name), index(index) {}
+    std::vector<ExprPtr> index; // eg. a[1][2] means pushing 1 and 2 to vector
+    TreeVarExpr(std::string name, std::vector<ExprPtr> index) : TreeExpr(this_type), name(name), index(index) {}
 };
 
 struct TreeNumber : public TreeExpr
@@ -189,7 +184,7 @@ struct TreeRoot : public TreeExpr
     std::vector<ExprPtr> rootItems;
     void append(ExprPtr x)
     {
-        rootItems.push_back(x);
+        rootItems.insert(rootItems.begin(), x);
     }
     TreeRoot(std::vector<ExprPtr> rootItems) : TreeExpr(this_type), rootItems(rootItems) {}
 };
@@ -223,13 +218,15 @@ struct TreeFuncDef : public TreeExpr
     // TODO: complete your code here;
     constexpr static NodeType this_type = ND_FuncDef;
     std::string funcName;
-    std::map<std::string, varType> input_params;
+    std::vector<std::pair<std::string, varType>> input_params;
     FuncType type;
     ExprPtr blockNode;
-    TreeFuncDef(std::string funcName, std::map<std::string, varType> input_params, FuncType type, ExprPtr blockNode) : TreeExpr(this_type), funcName(funcName), input_params(input_params), type(type), blockNode(blockNode) {}
-    void append(string x, varType y)
+    TreeFuncDef(std::string funcName, std::vector<std::pair<std::string, varType>> input_params, Type t, ExprPtr blockNode) : TreeExpr(this_type), funcName(funcName), input_params(input_params), blockNode(blockNode), type(std::vector<varType>{}, t)
     {
-        input_params[x] = y;
+        for (int i = 0; i < input_params.size(); ++i)
+        {
+            type.inputType.insert(type.inputType.begin(), input_params[i].second);
+        }
     }
 };
 
