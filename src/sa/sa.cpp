@@ -292,7 +292,18 @@ varType type_check(TreeExpr * node, Table<varType> varTable, Table<FuncType> fun
         }
         return funcTable.lookup(funcExpNode->name).returnType;*/
         //TODO
-        return varType(FAIL,0);
+        std::vector<ExprPtr> name_vec=funcExpNode->varNames;
+        string cur_func=funcTable.get_cur_func_name();
+        FuncType func=funcTable.lookup(cur_func);
+        std::vector<varType> input_parm=func.inputType;
+        int cur=0;
+        for (auto expr:name_vec){
+            varType x=type_check(expr,varTable,funcTable);
+            if (equal(x,input_parm[cur])) cur++;
+            return varType(FAIL,0);
+        }
+        if (cur!=input_parm.size()) return varType(FAIL,0);
+        return func.returnType;
     }
 
     // var exp
