@@ -22,15 +22,17 @@ int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable) {
             // varDecl, may have several var. eg. int a = 1, b, c = 1;
             if (auto *varDeclNode = root->rootItems[i]->as<TreeVarDecl *>()) {
 
-                for (int i = 0; i < varDeclNode->varNames.size(); i++) {
+                for (int i = 0; i < varDeclNode->assignStmtNodes.size(); i++) {
+                    // 
+                    auto *assignStmtNode = varDeclNode->assignStmtNodes[i]->as<TreeAssignStmt *>();
+                    auto *varExpNode = assignStmtNode->lhs->as<TreeVarExpr *>();
                     // add new var to now table.
-                    if (varTable.add_one_entry(varDeclNode->varNames[i], varDeclNode->types[i]) != 0)
+                    if (varTable.add_one_entry(varExpNode->name, varType(varDeclNode->type, varExpNode->index.size())) != 0)
                         return -1;
 
                     // if the varDecl has assign expression, do type_check. eg. int a = 1;
-                    if (varDeclNode->assignStmtNodes[i]->is<TreeAssignStmt>())
-                        if (type_check(varDeclNode->assignStmtNodes[i], varTable, funcTable).type == 0)
-                            return -1;
+                    if (type_check(assignStmtNode, varTable, funcTable).type == 0)
+                        return -1;
                 }
 
                 continue;
@@ -44,8 +46,8 @@ int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable) {
                 if (funcTable.add_one_entry(funcDefNode->funcName, funcDefNode->type) != 0)
                     return -1;
 
-                for (int i = 0; i < funcDefNode->varNames.size(); i++)
-                    varTable.add_one_entry(funcDefNode->varNames[i], funcDefNode->type.inputType[i]);
+                for (auto inputParam : funcDefNode->input_params)
+                    varTable.add_one_entry(inputParam.first, inputParam.second);
 
                 funcTable.set_func_name(funcDefNode->funcName);
                 // analysis block
@@ -73,15 +75,17 @@ int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable) {
             // varDecl eg. int a = 1;
             if (auto *varDeclNode = blockNode->blockItems[i]->as<TreeVarDecl *>()) {
 
-                for (int i = 0; i < varDeclNode->varNames.size(); i++) {
+                for (int i = 0; i < varDeclNode->assignStmtNodes.size(); i++) {
+                    // 
+                    auto *assignStmtNode = varDeclNode->assignStmtNodes[i]->as<TreeAssignStmt *>();
+                    auto *varExpNode = assignStmtNode->lhs->as<TreeVarExpr *>();
                     // add new var to now table.
-                    if (varTable.add_one_entry(varDeclNode->varNames[i], varDeclNode->types[i]) != 0)
+                    if (varTable.add_one_entry(varExpNode->name, varType(varDeclNode->type, varExpNode->index.size())) != 0)
                         return -1;
 
                     // if the varDecl has assign expression, do type_check. eg. int a = 1;
-                    if (varDeclNode->assignStmtNodes[i]->is<TreeAssignStmt>())
-                        if (type_check(varDeclNode->assignStmtNodes[i], varTable, funcTable).type == 0)
-                            return -1;
+                    if (type_check(assignStmtNode, varTable, funcTable).type == 0)
+                        return -1;
                 }
 
                 continue;
