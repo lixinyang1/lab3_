@@ -16,5 +16,5 @@ int main(int argc, char **argv)
     int result = yyparse();
     fmt::print("Parse finish!\n");
     print_expr(root, 0, 0);
-    return 0;
+    return result;
 }

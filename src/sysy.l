@@ -60,44 +60,44 @@ Comment2      "//".*
 
 %%
 
-{If}              { yylval.str = strdup(yytext); printf("If"); return If; }
-{Else}            { yylval.str = strdup(yytext); printf("Else"); return Else; }
-{For}             { yylval.str = strdup(yytext); printf("For"); return For; }
-{While}           { yylval.str = strdup(yytext); printf("While"); return While; }
-{Return}          { yylval.str = strdup(yytext); printf("Return"); return Return; }
-{Break}           { yylval.str = strdup(yytext); printf("Break"); return Break; }
-{Continue}        { yylval.str = strdup(yytext); printf("Continue"); return Continue; }
-{LParen}          { yylval.str = strdup(yytext); printf("LParen"); return LParen; }
-{RParen}          { yylval.str = strdup(yytext); printf("RParen"); return RParen; }
-{LBrace}          { yylval.str = strdup(yytext); printf("LBrace"); return LBrace; }
-{RBrace}          { yylval.str = strdup(yytext); printf("RBrace"); return RBrace; }
-{LBracket}        { yylval.str = strdup(yytext); printf("LBracket"); return LBracket; }
-{RBracket}        { yylval.str = strdup(yytext); printf("RBracket"); return RBracket; }
-{Semicolon}       { yylval.str = strdup(yytext); printf(";"); return Semicolon; }
-{Comma}           { yylval.str = strdup(yytext); printf(","); return Comma; }
-{SQuote}          { yylval.str = strdup(yytext); printf("\'"); return SQuote; }
-{DQuote}          { yylval.str = strdup(yytext); printf("\""); return DQuote; }
-{Assign}          { yylval.str = strdup(yytext); printf("Assign"); return Assign; }
-{Eq}              { yylval.str = strdup(yytext); printf("Eq"); return Eq; }
-{Neq}             { yylval.str = strdup(yytext); printf("Neq"); return Neq; }
-{Lt}              { yylval.str = strdup(yytext); printf("Lt"); return Lt; }
-{Gt}              { yylval.str = strdup(yytext); printf("Gt"); return Gt; }
-{Lte}             { yylval.str = strdup(yytext); printf("Lte"); return Lte; }
-{Gte}             { yylval.str = strdup(yytext); printf("Gte"); return Gte; }
-{Plus}            { yylval.str = strdup(yytext); printf("Plus"); return Plus; }
-{Minus}           { yylval.str = strdup(yytext); printf("Minus"); return Minus; }
-{Mul}             { yylval.str = strdup(yytext); printf("Mul"); return Mul; }
-{Div}             { yylval.str = strdup(yytext); printf("Div"); return Div; }
-{Mod}             { yylval.str = strdup(yytext); printf("Mod"); return Mod; }
-{And}             { yylval.str = strdup(yytext); printf("And"); return And; }
-{Or}              { yylval.str = strdup(yytext); printf("Or"); return Or; }
-{Not}             { yylval.str = strdup(yytext); printf("Not"); return Not; }
-{Dot}             { yylval.str = strdup(yytext); printf("Dot"); return Dot; }
-{Backslash}       { yylval.str = strdup(yytext); printf("Backslash"); return Backslash; }
-{TyInt}           { yylval.str = strdup(yytext); printf("TyInt"); return TyInt; }
-{TyVoid}          { yylval.str = strdup(yytext); printf("TyVoid"); return TyVoid; }
+{If}              { printf("If"); return If; }
+{Else}            { printf("Else"); return Else; }
+{For}             { printf("For"); return For; }
+{While}           { printf("While"); return While; }
+{Return}          { printf("Return"); return Return; }
+{Break}           { printf("Break"); return Break; }
+{Continue}        { printf("Continue"); return Continue; }
+{LParen}          { printf("LParen"); return LParen; }
+{RParen}          { printf("RParen"); return RParen; }
+{LBrace}          { printf("LBrace"); return LBrace; }
+{RBrace}          { printf("RBrace"); return RBrace; }
+{LBracket}        { printf("LBracket"); return LBracket; }
+{RBracket}        { printf("RBracket"); return RBracket; }
+{Semicolon}       { printf(";"); return Semicolon; }
+{Comma}           { printf(","); return Comma; }
+{SQuote}          { printf("\'"); return SQuote; }
+{DQuote}          { printf("\""); return DQuote; }
+{Assign}          { printf("Assign"); return Assign; }
+{Eq}              { printf("Eq"); return Eq; }
+{Neq}             { printf("Neq"); return Neq; }
+{Lt}              { printf("Lt"); return Lt; }
+{Gt}              { printf("Gt"); return Gt; }
+{Lte}             { printf("Lte"); return Lte; }
+{Gte}             { printf("Gte"); return Gte; }
+{Plus}            { printf("Plus"); return Plus; }
+{Minus}           { printf("Minus"); return Minus; }
+{Mul}             { printf("Mul"); return Mul; }
+{Div}             { printf("Div"); return Div; }
+{Mod}             { printf("Mod"); return Mod; }
+{And}             { printf("And"); return And; }
+{Or}              { printf("Or"); return Or; }
+{Not}             { printf("Not"); return Not; }
+{Dot}             { printf("Dot"); return Dot; }
+{Backslash}       { printf("Backslash"); return Backslash; }
+{TyInt}           { printf("TyInt"); return TyInt; }
+{TyVoid}          { printf("TyVoid"); return TyVoid; }
 {Int}             { yylval.ival = atoi(yytext); printf("Int(%s)", yytext); return Int; }
-{Ident}           { yylval.str = strdup(yytext); printf("Ident(%s)", yytext); return Ident; }
+{Ident}           { yylval.strPtr = new std::string(strdup(yytext)); printf("Ident(%s)", yytext); return Ident; }
 {NEWLINE}         { printf("%s", yytext); }
 {BLANK}           { printf("%s", yytext); }
 {Comment1}        { printf("%s", yytext); }
