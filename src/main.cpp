@@ -18,7 +18,7 @@ int main(int argc, char **argv)
     int result = yyparse();
     if (result != 0) return result;
     fmt::print("\nParse finish!\n");
-    // print_expr(root, "","",1);
+    print_expr(root, "","",1);
     result = semantic_analysis(root);
     if (result == 0)
         cout << "pass test" << endl;
