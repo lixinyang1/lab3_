@@ -7,7 +7,6 @@ extern int yyparse();
 
 TreeRoot *root;
 extern FILE *yyin;
-extern void print_expr(ExprPtr exp, std::string prefix, std::string ident);
 // extern int semantic_analysis(TreeRoot *root);
 
 int main(int argc, char **argv)
