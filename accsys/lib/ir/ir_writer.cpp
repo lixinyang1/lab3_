@@ -311,7 +311,7 @@ void AccipitWriter::printInstruction(const Instruction *I) {
                 Out << "div ";
                 break;
             case Instruction::Mod:
-                Out << "mod ";
+                Out << "rem ";
                 break;
             case Instruction::And:
                 Out << "and ";
