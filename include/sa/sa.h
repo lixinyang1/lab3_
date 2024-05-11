@@ -1,14 +1,7 @@
 #include "ast/ast.h"
 #include <vector>
 #include <map>
-
-
-
-int semantic_analysis(ExprPtr root);
-int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable);
-
-varType type_check(TreeExpr * node, Table<varType> varTable, Table<FuncType> funcTable);
-
+#include <iostream>
 
 template<typename T>
 class Table {
@@ -19,7 +12,7 @@ private:
 public:
     Table() {
         // TODO: complete your code here
-        //do nothing yeah!
+        // do nothing yeah!
         tableVector.clear();
     }
 
@@ -34,7 +27,11 @@ public:
     int add_one_entry(std::string entry_name, T entry_type) {
         // TODO: complete your code here
         int sz=tableVector.size();
+        if (tableVector[sz-1].count(entry_name)) {
+            return -1;
+        }
         tableVector[sz-1][entry_name]=entry_type;
+        // print_table();
         return 0;
     }
 
@@ -50,11 +47,31 @@ public:
         tableVector.pop_back();
     }
 
-    T lookup(std::string entry_name) {
+    T* lookup(std::string entry_name) {
         // TODO: complete your code here
         int sz=tableVector.size();
-        if (tableVector[sz-1].count(entry_name)) return tableVector[sz-1][entry_name];
-        else return null;
+        for (int i = tableVector.size() - 1; i >= 0; i--) {
+            if (tableVector[i].count(entry_name)) 
+                return new T(tableVector[i][entry_name]);
+        }
+        return nullptr;
+    }
+
+    void print_table() {
+        cout << "table: " << endl;
+        for (int i = 0; i < tableVector.size(); i++) {
+            cout << "env " << i << ": ";
+            for (auto pair : tableVector[i]) {
+                cout << pair.first << " ";
+            }
+            cout << endl;
+        }
     }
 
 };
+
+
+int semantic_analysis(TreeRoot *root);
+int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable, bool innerBlock);
+
+varType type_check(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable);

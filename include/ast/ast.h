@@ -25,7 +25,11 @@ struct varType
     // 0: scalar, >0: array
     int dimension;
 
+    vector<int> dimension_size;
+
     varType(Type type, int d) : type(type), dimension(d) {}
+    varType(Type type, int d, std::vector<int> d_size) : type(type), dimension(d_size.size()), dimension_size(d_size) {}
+    varType(const varType& other): type(other.type), dimension(other.dimension), dimension_size(other.dimension_size) {}
     varType() {}
 };
 
@@ -37,6 +41,8 @@ struct FuncType
     // return type, here varType.type can be 'VOID'
     Type returnType;
     FuncType(std::vector<varType> iT, Type rT) : inputType(iT), returnType(rT) {}
+    FuncType(const FuncType& other): inputType(other.inputType), returnType(other.returnType) {}
+    FuncType(){}
 };
 
 enum OpType
@@ -88,7 +94,7 @@ struct TreeAssignStmt : public TreeExpr
     // TODO: complete your code here;
     constexpr static NodeType this_type = ND_AssignExpr;
     ExprPtr lhs, rhs;
-    TreeAssignStmt(ExprPtr lhs, ExprPtr rhs) : TreeExpr(ND_AssignExpr), lhs(lhs), rhs(rhs) {}
+    TreeAssignStmt(ExprPtr lhs, ExprPtr rhs) : TreeExpr(this_type), lhs(lhs), rhs(rhs) {}
 };
 
 struct TreeIfStmt : public TreeExpr
@@ -96,7 +102,7 @@ struct TreeIfStmt : public TreeExpr
     // TODO: complete your code here;
     constexpr static NodeType this_type = ND_IfElseExpr;
     ExprPtr conditionExp, trueStmtNode, elseStmtNode;
-    TreeIfStmt(ExprPtr a, ExprPtr b, ExprPtr c) : TreeExpr(ND_IfElseExpr), conditionExp(a), trueStmtNode(b), elseStmtNode(c) {}
+    TreeIfStmt(ExprPtr a, ExprPtr b, ExprPtr c) : TreeExpr(this_type), conditionExp(a), trueStmtNode(b), elseStmtNode(c) {}
 };
 
 struct TreeWhileStmt : public TreeExpr
@@ -104,14 +110,14 @@ struct TreeWhileStmt : public TreeExpr
     // TODO: complete your code here;
     constexpr static NodeType this_type = ND_LoopExpr;
     ExprPtr conditionExp, trueStmtNode;
-    TreeWhileStmt(ExprPtr a, ExprPtr b) : TreeExpr(ND_LoopExpr), conditionExp(a), trueStmtNode(b) {}
+    TreeWhileStmt(ExprPtr a, ExprPtr b) : TreeExpr(this_type), conditionExp(a), trueStmtNode(b) {}
 };
 
 struct TreeWhileControlStmt : public TreeExpr
 {
     constexpr static NodeType this_type = ND_LoopControlExpr;
     string controlType;
-    TreeWhileControlStmt(string controlType) : TreeExpr(ND_LoopControlExpr), controlType(controlType) {}
+    TreeWhileControlStmt(string controlType) : TreeExpr(this_type), controlType(controlType) {}
 };
 
 struct TreeReturnStmt : public TreeExpr
@@ -119,7 +125,7 @@ struct TreeReturnStmt : public TreeExpr
     // TODO: complete your code here;
     constexpr static NodeType this_type = ND_ReturnExpr;
     ExprPtr returnExp;
-    TreeReturnStmt(ExprPtr returnExp) : TreeExpr(ND_ReturnExpr), returnExp(returnExp) {}
+    TreeReturnStmt(ExprPtr returnExp) : TreeExpr(this_type), returnExp(returnExp) {}
 };
 
 // Exp node

@@ -20,6 +20,7 @@ extern TreeRoot* root;
     std::vector<ExprPtr> *vec1Ptr;
     std::vector< std::pair< std::string, varType> > *vec2Ptr;
     std::pair<std::string, varType> *pairPtr;
+    std::vector<int> *dimension_size_ptr;
     TreeRoot* rt;
 }
 
@@ -40,7 +41,7 @@ extern TreeRoot* root;
 %type <vec1Ptr> FuncRParams MoreFuncRParams ValIndex BlockItems Dimension MoreVarDef
 %type <vec2Ptr> MoreFuncFParams FuncFParams
 %type <pairPtr> FuncFParam
-%type <ival> DimParams MoreDimParams
+%type <dimension_size_ptr> DimParams MoreDimParams
 %type <rt> CompUnit
 
 /// priority
@@ -129,25 +130,25 @@ FuncFParams : FuncFParam MoreFuncFParams {
         ;
 
 FuncFParam : TyInt Ident DimParams {
-                                varType v = varType(INT, $3);
+                                varType v = varType(INT, 0, *$3);
                                 $$ = new std::pair<std::string, varType>(*$2, v);
 };
 
 DimParams : LBracket RBracket MoreDimParams {
-                                $3 = $3 + 1;
+                                $3->insert($3->begin(), 0);
                                 $$ = $3;
 }
         | {
-                                $$ = 0;
+                                $$ = new std::vector<int>();
         }
         ;
 
 MoreDimParams : LBracket Int RBracket MoreDimParams {
-                                $4 = $4 + 1;
+                                $4->insert($4->begin(), $2);
                                 $$ = $4;
 }
         | {
-                                $$ = 0;
+                                $$ = new std::vector<int>();
         }
         ;
 

@@ -19,6 +19,7 @@ TreeNodeDefine(ND_UnaryExpr)
                                         TreeNodeDefine(ND_Root)
                                             TreeNodeDefine(ND_VarDecl)
                                                 TreeNodeDefine(ND_FuncDef)
+                                                    TreeNodeDefine(ND_Block)
 
     // Binary Opcode
     OpcodeDefine(OP_Add, "add")
