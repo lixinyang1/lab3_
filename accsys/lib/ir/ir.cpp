@@ -595,3 +595,17 @@ GlobalVariable *GlobalVariable::Create(Type *EleTy, std::size_t NumElements, boo
 bool GlobalVariable::hasName() const {
     return !Name.empty();
 }
+
+Function *Module::getFunction(const std::string_view Name) const {
+    auto IT = SymbolFunctionMap.find(Name);
+    if (IT != SymbolFunctionMap.end())
+        return IT->second;
+    return nullptr;
+}
+
+GlobalVariable *Module::getGlobalVariable(const std::string_view Name) const {
+    auto IT = SymbolGlobalMap.find(Name);
+    if (IT != SymbolGlobalMap.end())
+        return IT->second;
+    return nullptr;
+}
