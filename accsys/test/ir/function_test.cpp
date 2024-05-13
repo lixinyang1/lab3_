@@ -121,3 +121,14 @@ TEST(FunctionTest, FactorialTest) {
     delete One;
     delete Zero;
 }
+
+
+TEST(FunctionTest, GetintTest) {
+    // Test the factorial function
+    Type *IntegerType = Type::getIntegerTy();
+    auto M = std::make_unique<Module>();
+    FunctionType *FT = FunctionType::get(IntegerType);
+    Function *Getint = Function::Create(FT, true, "getint", M.get());
+    ASSERT_EQ(M->getFunction("getint"), Getint);
+    M->print(std::cout, true);
+}
