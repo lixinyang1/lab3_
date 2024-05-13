@@ -130,5 +130,20 @@ TEST(FunctionTest, GetintTest) {
     FunctionType *FT = FunctionType::get(IntegerType);
     Function *Getint = Function::Create(FT, true, "getint", M.get());
     ASSERT_EQ(M->getFunction("getint"), Getint);
+    Function *Getch = Function::Create(FT, true, "getch", M.get());
+    ASSERT_EQ(M->getFunction("getch"), Getch);
     M->print(std::cout, true);
+}
+
+
+TEST(FunctionTest, LocalModuleTest) {
+    // Test the factorial function
+    Type *IntegerType = Type::getIntegerTy();
+    Module M;
+    FunctionType *FT = FunctionType::get(IntegerType);
+    Function *Getint = Function::Create(FT, true, "getint", &M);
+    ASSERT_EQ(M.getFunction("getint"), Getint);
+    Function *Getch = Function::Create(FT, true, "getch", &M);
+    ASSERT_EQ(M.getFunction("getch"), Getch);
+    M.print(std::cout, true);
 }

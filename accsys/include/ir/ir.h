@@ -849,10 +849,10 @@ public:
     using const_global_iterator = GlobalListType::const_iterator;
 
 private:
-    FunctionListType FunctionList;
-    GlobalListType GlobalVariableList;
     std::unordered_map<std::string_view, Function *> SymbolFunctionMap;
     std::unordered_map<std::string_view, GlobalVariable *> SymbolGlobalMap;
+    FunctionListType FunctionList;
+    GlobalListType GlobalVariableList;
 
     friend class Function;
     friend class GlobalVariable;
