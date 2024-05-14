@@ -651,12 +651,14 @@ private:
     const InstListType &getInstList() const { return InstList; }
 
     BasicBlock(Function *Parent, BasicBlock *InsertBefore);
+    void setParent(Function *F);
+
+    friend class Function;
 public:
     static BasicBlock *Create(Function *Parent = nullptr, BasicBlock *InsertBefore = nullptr);
     /// Insert an unlinked basic block into a function immediately before the specified basic block.
     void insertInto(Function *Parent, BasicBlock *InsertBefore = nullptr);
 
-    void setParent(Function *F);
     Function *getParent() const { return Parent; }
     bool hasName() const;
     void setName(std::string_view Name);
@@ -812,7 +814,6 @@ private:
     Type *EleTy;
     std::size_t NumElements;
     bool ExternalLinkage;
-    std::string Name;
     Module *Parent;
 public:
     static GlobalVariable *Create(Type *EleTy, std::size_t NumElements = 1, bool ExternalLinkage = false,
@@ -825,9 +826,6 @@ public:
     /// Return the function is defined in the current module or has external linkage.
     bool hasExternalLinkage() const { return ExternalLinkage; }
     Module *getParent() const { return Parent; }
-    std::string_view getName() const { return Name; }
-    bool hasName() const;
-
 
     static bool classof(const Value *V) {
         return V->getValueID() == Value::GlobalVariableVal;
@@ -875,6 +873,10 @@ public:
     // Private functions and global variables accessors.
     FunctionListType &getFunctionList() { return FunctionList; }
     const FunctionListType &getFunctionList() const { return FunctionList; }
+    std::unordered_map<std::string_view, Function *> &
+    getFunctionMap() { return SymbolFunctionMap; }
+    const std::unordered_map<std::string_view, Function *> &
+    getFunctionMap() const { return SymbolFunctionMap; }
 
     [[nodiscard]] std::size_t size() const { return FunctionList.size(); }
     [[nodiscard]] bool empty() const { return FunctionList.empty(); }
@@ -882,6 +884,10 @@ public:
     /// Global variable accessor.
     /// Look up the specified global variable in the module symbol table.
     GlobalVariable *getGlobalVariable(std::string_view Name) const;
+    std::unordered_map<std::string_view, GlobalVariable *> &
+    getGlobalVariableMap() { return SymbolGlobalMap; }
+    const std::unordered_map<std::string_view, GlobalVariable *> &
+    getGlobalVariableMap() const { return SymbolGlobalMap; }
     // Global iteration.
     global_iterator global_begin() { return GlobalVariableList.begin(); }
     const_global_iterator global_begin() const { return GlobalVariableList.cbegin(); }
