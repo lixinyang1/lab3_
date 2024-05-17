@@ -384,7 +384,7 @@ void AccipitWriter::printInstruction(const Instruction *I) {
             for (unsigned i = 0; i < Dims; ++i) {
                 Out << ", [";
                 WriteAsOperandInternal(Out, Offset->getOperand(i + 1), Tracker, isForDebug);
-                Out << ", ";
+                Out << "< ";
                 auto Bound = Offset->getBound(i);
                 if (Bound.has_value()) {
                     Out << Bound.value();
