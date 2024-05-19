@@ -17,3 +17,4 @@ endmacro()
 
 
 add_subdirectory(ir)
+add_subdirectory(utils)

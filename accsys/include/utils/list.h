@@ -192,8 +192,8 @@ public:
     }
 
     [[nodiscard]] bool empty() const {
-        return Sentinel.getNextNode() == nullptr &&
-               Sentinel.getPrevNode() == nullptr;
+        return Sentinel.getNextNode() == &Sentinel &&
+               Sentinel.getPrevNode() == &Sentinel;
     }
 
 
