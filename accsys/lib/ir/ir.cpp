@@ -61,11 +61,29 @@ void Value::replaceAllUsesWith(Value *V) {
         I->set(V);
 }
 
-void Value::setName(std::string_view Name) {
+void Value::setName(std::string_view NewName) {
     // 'Constant' has no name
     if (isa<Constant>(this))
         return;
-    this->Name = Name;
+    // set no name.
+    if (!hasName() && NewName.empty())
+        return;
+    // Name isn't change?
+    if (getName() == NewName)
+        return;
+    // symbol table to update?
+    if (auto *GV = dyn_cast<GlobalVariable>(this)) {
+        auto &ST = GV->getParent()->getGlobalVariableMap();
+        if (!NewName.empty()) {
+            if (GV->hasName())
+                ST.erase(GV->getName());
+            ST[NewName] = GV;
+        } else {
+            ST.erase(GV->getName());
+        }
+    }
+    // set name.
+    Name = NewName;
 }
 
 bool Value::hasName() const {
@@ -495,7 +513,7 @@ void BasicBlock::insertInto(Function *NewParent, BasicBlock *InsertBefore) {
     } else {
         NewParent->getBasicBlockList().insert(NewParent->end(), this);
     }
-    Parent = NewParent;
+    setParent(NewParent);
 }
 
 BasicBlock *BasicBlock::Create(Function *Parent, BasicBlock *InsertBefore) {
@@ -540,7 +558,8 @@ Function::Function(FunctionType *FTy, bool ExternalLinkage,
 
     if (M) {
         M->getFunctionList().push_back(this);
-        M->SymbolFunctionMap[getName()] = this;
+        if (hasName())
+            M->SymbolFunctionMap[getName()] = this;
     }
 }
 
@@ -569,19 +588,40 @@ Function::iterator Function::insert(Function::iterator Position, BasicBlock *BB)
     return FIT;
 }
 
+bool Function::hasName() const {
+    return !Name.empty();
+}
+
 GlobalVariable::GlobalVariable(Type *EleTy, std::size_t NumElements, bool ExternalLinkage,
                                std::string_view Name, Module *M)
     : Value(PointerType::get(EleTy), Value::GlobalVariableVal),
       EleTy(EleTy), NumElements(NumElements),
-      ExternalLinkage(ExternalLinkage), Name(Name), Parent(M) {
+      ExternalLinkage(ExternalLinkage), Parent(M) {
     assert(!EleTy->isUnitTy() && "Cannot create global variable of () type!");
     if (M) {
         M->getGlobalList().push_back(this);
-        M->SymbolGlobalMap[getName()] = this;
+        if (hasName())
+            M->SymbolGlobalMap[getName()] = this;
     }
+    setName(Name);
 }
 
 GlobalVariable *GlobalVariable::Create(Type *EleTy, std::size_t NumElements, bool ExternalLinkage,
                                         std::string_view Name, Module *M) {
     return new GlobalVariable(EleTy, NumElements, ExternalLinkage, Name, M);
+}
+
+
+Function *Module::getFunction(const std::string_view Name) const {
+    auto IT = SymbolFunctionMap.find(Name);
+    if (IT != SymbolFunctionMap.end())
+        return IT->second;
+    return nullptr;
+}
+
+GlobalVariable *Module::getGlobalVariable(const std::string_view Name) const {
+    auto IT = SymbolGlobalMap.find(Name);
+    if (IT != SymbolGlobalMap.end())
+        return IT->second;
+    return nullptr;
 }

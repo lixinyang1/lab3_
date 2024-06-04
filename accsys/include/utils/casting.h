@@ -136,7 +136,7 @@ template <typename First, typename Second, typename... Rest, typename From>
 template <typename To, typename From>
 typename cast_retty<To, const From>::ret_type
 dyn_cast(const From &Val) {
-    if (isa<To, From>(Val)) {
+    if (isa<To>(Val)) {
         return cast_convert_val<To, const From>::doit(const_cast<From &>(Val));
     }
     return nullptr;
@@ -145,7 +145,7 @@ dyn_cast(const From &Val) {
 template <typename To, typename From>
 typename cast_retty<To, From>::ret_type
 dyn_cast(From &Val) {
-    if (isa<To, From>(Val)) {
+    if (isa<To>(Val)) {
         return cast_convert_val<To, From>::doit(Val);
     }
     return nullptr;
@@ -154,7 +154,7 @@ dyn_cast(From &Val) {
 template <typename To, typename From>
 typename cast_retty<To, From *>::ret_type
 dyn_cast(From *Val) {
-    if (isa<To, From>(Val)) {
+    if (isa<To>(Val)) {
         return cast_convert_val<To, From *>::doit(Val);
     }
     return nullptr;

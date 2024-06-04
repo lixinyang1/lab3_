@@ -1,5 +1,7 @@
 #include "ir/type.h"
-#include <cstdio>
+#include "utils/casting.h"
+
+#include <stdexcept>
 
 Type Type::IntegerTy(Type::IntegerTyID);
 Type Type::UnitTy(Type::UnitTyID);

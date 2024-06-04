@@ -3,10 +3,6 @@ macro(accsys_add_test TESTNAME FILES)
     add_executable(${TESTNAME} ${FILES})
     message(STATUS "Adding accsys test ${TESTNAME}")
     target_link_libraries(${TESTNAME} PRIVATE GTest::gtest_main)
-    # link address sanitizer
-    if (ACCSYS_DEBUG)
-        target_link_libraries(IRTest PRIVATE -fsanitize=address)
-    endif()
     set_target_properties(${TESTNAME}
             PROPERTIES
             RUNTIME_OUTPUT_DIRECTORY "${ACCSYS_TEST_DIR}"
@@ -21,3 +17,4 @@ endmacro()
 
 
 add_subdirectory(ir)
+add_subdirectory(utils)
