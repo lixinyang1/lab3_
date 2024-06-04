@@ -655,6 +655,9 @@ private:
 
     friend class Function;
 public:
+    /// Create a BasicBlock and specify its parent Function.
+    /// If the InsertBefore is not given, the BasicBlock will be inserted
+    /// at the end of the Function by default, or else before the InsertBefore.
     static BasicBlock *Create(Function *Parent = nullptr, BasicBlock *InsertBefore = nullptr);
     /// Insert an unlinked basic block into a function immediately before the specified basic block.
     void insertInto(Function *Parent, BasicBlock *InsertBefore = nullptr);
