@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <string_view>
 #include <vector>
+#include <fmt/core.h>
 
 Use::Use(Value *Parent) : Parent(Parent) { }
 

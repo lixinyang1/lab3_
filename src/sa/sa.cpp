@@ -11,7 +11,7 @@ int semantic_analysis(TreeRoot *root) {
     return sa(root, varTable, funcTable, true);
 }
 
-int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable, bool innerBlock) {
+int sa(ExprPtr node, Table<varType>& varTable, Table<FuncType>& funcTable, bool innerBlock) {
 
     assert(node != nullptr);
 
@@ -73,6 +73,9 @@ int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable, bool in
                 cout << "------------------------" << endl;
                 fmt::print("analysis funcDef\n");
                 // add new func to now table
+                for (int i = 0; i < funcDefNode->type.inputType.size(); i++) {
+                    fmt::print("param dimension: {}\n", funcDefNode->type.inputType[i].dimension);
+                }
                 if (funcTable.add_one_entry(funcDefNode->funcName, funcDefNode->type) != 0) {
                     cout << "cannot redefine func" << endl;
                     return -1;

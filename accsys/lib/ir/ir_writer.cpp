@@ -1,7 +1,9 @@
 #include "ir/type.h"
 #include "ir/ir.h"
 #include "utils/casting.h"
+#include <fmt/core.h>
 
+#include <iostream>
 #include <stdexcept>
 #include <ostream>
 
@@ -35,7 +37,7 @@ static void PrintAccipitName(std::ostream &OS, std::string_view Name, PrefixType
 /// Turn the specified name into an 'Accipit name', which is either prefixed with %
 static void PrintAccipitName(std::ostream &OS, const Value *V) {
     PrintAccipitName(OS, V->getName(),
-                isa<GlobalVariable>(V) ? GlobalPrefix : LocalPrefix);
+                isa<GlobalVariable>(V) ? GlobalPrefix : isa<Argument>(V) ? ArgPrefix : LocalPrefix);
 }
 
 
@@ -472,7 +474,7 @@ void AccipitWriter::printFunction(const Function *F) {
     Out << "(";
     ListSeparator LS;
     for (auto AI = F->arg_begin(), AE = F->arg_end(); AI != AE; ++AI) {
-        Out << (std::string_view)LS;
+        Out << (std::string_view)LS;  // ','
         printArgument(&*AI);
     }
     Out << " ) -> ";

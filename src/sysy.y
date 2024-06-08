@@ -4,6 +4,7 @@
 #include <ast/ast.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <iostream>
 void yyerror(const char *s);
 extern int yylex(void);
 extern int yylineno;

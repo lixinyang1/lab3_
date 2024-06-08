@@ -1,7 +1,9 @@
+#pragma once
 #include "ast/ast.h"
 #include <vector>
 #include <map>
 #include <iostream>
+#include <fmt/core.h>
 
 template<typename T>
 class Table {
@@ -14,6 +16,10 @@ public:
         // TODO: complete your code here
         // do nothing yeah!
         tableVector.clear();
+    }
+
+    std::vector<std::map<std::string, T>> getTable() {
+        return tableVector;
     }
 
     void set_func_name(string x){
@@ -51,11 +57,21 @@ public:
         // TODO: complete your code here
         int sz=tableVector.size();
         for (int i = tableVector.size() - 1; i >= 0; i--) {
-            if (tableVector[i].count(entry_name)) 
+            if (tableVector[i].count(entry_name))
                 return new T(tableVector[i][entry_name]);
         }
         return nullptr;
     }
+
+    // T lookup_value(std::string entry_name) {
+    //     // TODO: complete your code here
+    //     int sz=tableVector.size();
+    //     for (int i = tableVector.size() - 1; i >= 0; i--) {
+    //         if (tableVector[i].count(entry_name)) 
+    //             return tableVector[i][entry_name];
+    //     }
+    //     fmt::print("wrong lookup\n");
+    // }
 
     void print_table() {
         cout << "table: " << endl;
@@ -72,6 +88,6 @@ public:
 
 
 int semantic_analysis(TreeRoot *root);
-int sa(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable, bool innerBlock);
+int sa(ExprPtr node, Table<varType>& varTable, Table<FuncType>& funcTable, bool innerBlock);
 
 varType type_check(ExprPtr node, Table<varType> varTable, Table<FuncType> funcTable);

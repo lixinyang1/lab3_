@@ -1,5 +1,6 @@
 #include "ast/ast.h"
 #include "sa/sa.h"
+#include "ir/ir.h"
 #include <iostream>
 #include <fmt/core.h>
 
@@ -19,7 +20,9 @@ int main(int argc, char **argv)
     fmt::print("\nParse finish!\n");
     print_expr(root, "","",1);
     result = semantic_analysis(root);
-    if (result == 0)
-        cout << "pass test" << endl;
+    if (result != 0) return result;
+    cout << "passing semantic analysis" << endl;
+    ir_translate(root, argv[2]);
+    // ir_translate(root, argv[2], true);  // debug version
     return result;
 }

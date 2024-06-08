@@ -6,7 +6,7 @@
 
 using namespace std;
 
-enum Type
+enum MyType
 {
     INT,
     VOID,
@@ -20,15 +20,15 @@ struct varType
 
     // actually only need INT, but can be 'VOID' to
     // represent that the function is void
-    Type type;
+    MyType type;
 
     // 0: scalar, >0: array
     int dimension;
 
     vector<int> dimension_size;
 
-    varType(Type type, int d) : type(type), dimension(d) {}
-    varType(Type type, int d, std::vector<int> d_size) : type(type), dimension(d_size.size()), dimension_size(d_size) {}
+    varType(MyType type, int d) : type(type), dimension(d) {}
+    varType(MyType type, int d, std::vector<int> d_size) : type(type), dimension(d_size.size()), dimension_size(d_size) {}
     varType(const varType& other): type(other.type), dimension(other.dimension), dimension_size(other.dimension_size) {}
     varType() {}
 };
@@ -39,8 +39,8 @@ struct FuncType
     std::vector<varType> inputType;
 
     // return type, here varType.type can be 'VOID'
-    Type returnType;
-    FuncType(std::vector<varType> iT, Type rT) : inputType(iT), returnType(rT) {}
+    MyType returnType;
+    FuncType(std::vector<varType> iT, MyType rT) : inputType(iT), returnType(rT) {}
     FuncType(const FuncType& other): inputType(other.inputType), returnType(other.returnType) {}
     FuncType(){}
 };
@@ -197,10 +197,10 @@ struct TreeRoot : public TreeExpr
 
 struct TreeVarDecl : public TreeExpr
 {
-    Type type;
+    MyType type;
     std::vector<ExprPtr> assignStmtNodes;
     constexpr static NodeType this_type = ND_VarDecl;
-    TreeVarDecl(Type type, vector<ExprPtr> assignStmtNodes) : TreeExpr(this_type), type(type), assignStmtNodes(assignStmtNodes) {}
+    TreeVarDecl(MyType type, vector<ExprPtr> assignStmtNodes) : TreeExpr(this_type), type(type), assignStmtNodes(assignStmtNodes) {}
     void append(ExprPtr x)
     {
         assignStmtNodes.push_back(x);
@@ -227,11 +227,11 @@ struct TreeFuncDef : public TreeExpr
     std::vector<std::pair<std::string, varType>> input_params;
     FuncType type;
     ExprPtr blockNode;
-    TreeFuncDef(std::string funcName, std::vector<std::pair<std::string, varType>> input_params, Type t, ExprPtr blockNode) : TreeExpr(this_type), funcName(funcName), input_params(input_params), blockNode(blockNode), type(std::vector<varType>{}, t)
+    TreeFuncDef(std::string funcName, std::vector<std::pair<std::string, varType>> input_params, MyType t, ExprPtr blockNode) : TreeExpr(this_type), funcName(funcName), input_params(input_params), blockNode(blockNode), type(std::vector<varType>{}, t)
     {
         for (int i = 0; i < input_params.size(); ++i)
         {
-            type.inputType.insert(type.inputType.begin(), input_params[i].second);
+            type.inputType.push_back(input_params[i].second);
         }
     }
 };
